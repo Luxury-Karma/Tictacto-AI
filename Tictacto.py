@@ -1,5 +1,4 @@
-import math
-import re
+import regex
 
 
 def get_integer_input(prompt) -> [int,int]:
@@ -11,10 +10,14 @@ def get_integer_input(prompt) -> [int,int]:
         if len(user_input) == 2:
             for e in user_input:
                 if e.isdigit() or (e.startswith('-') and e[1:].isdigit()):
+                    #if int(e)-1 < 0 or int(e)-1>max_size:
+                    #    print('out limit')
+                    #    break
+
                     value.append(int(e) - 1)
                 else:
                     print('Invalid coordonate')
-                    get_integer_input(prompt)
+                    break
 
             break
         else:
@@ -23,15 +26,21 @@ def get_integer_input(prompt) -> [int,int]:
 
 
 def player_input(board: list[list[str]]) -> [int, int]:
-    coordonate: [int,int] = get_integer_input(f'Enter the coordinate from {1} to {len(board)} ex : 1 2')
-    if 0 > coordonate[1] >= len(board):
-        print(f'The row is not correct should be bigger than 0 and smaller {len(board)} you entered {coordonate[1]}\n'
-              f'Enter the coordonate again')
-        player_input(board)
-    if 0> coordonate[0] >= len(board):
-        print(f'The colon is not correct should be bigger than 0 and smaller {len(board)} you entered {coordonate[1]}\n'
-              f'Enter the coordonate again')
-        player_input(board)
+    coordonate_good: bool = False
+    coordonate: [int, int] = get_integer_input(f'Enter the coordinate from {1} to {len(board)} ex : 1 2')
+    while not coordonate_good:
+        if 0 > coordonate[1] >= len(board) or coordonate[1] < 0:
+            print(f'The row is not correct should be bigger than 0 and smaller {len(board)} you entered {coordonate[1]}\n'
+               f'Enter the coordonate again')
+        else:
+            coordonate_good = True
+            coordonate = get_integer_input(f'Enter the coordinate from {1} to {len(board)} ex : 1 2')
+        if 0> coordonate[0] >= len(board) or coordonate[1] < 0:
+            print(f'The colon is not correct should be bigger than 0 and smaller {len(board)} you entered {coordonate[1]}\n'
+                  f'Enter the coordonate again')
+            coordonate = get_integer_input(f'Enter the coordinate from {1} to {len(board)} ex : 1 2')
+        else:
+            coordonate_good = True
     return coordonate
 
 
@@ -49,44 +58,31 @@ def give_board_new_tile(board: list[list[str]], row_emplacement: int, emplacemen
     return board
 
 
-def three_case_winning(board: list[list[str]]) -> [bool, str]:
+def three_case_winning(board: list[list[str]], number_of_recurence:int) -> [bool, str]:
     board_l = len(board)
+    max_amount = len(board) * len(board)
     b = ''.join([elem for row in board for elem in row])
-    char_player = b = ''.join([elem for row in board for elem in row if elem and elem != ' '])
-    unique_chars = sorted(list(set(char_player)))
+    dif =''.join([elem for row in board for elem in row if elem and elem != ' '])
+    unique_chars = sorted(list(set(dif)))
 
     for char_player in unique_chars:
         b = b.strip()
-        r1 = re.compile(f'{char_player}'+'[.]'*(board_l+1)*2+f'{char_player}')
-        r2 = re.compile(f'{char_player}'+'[.]'*(board_l)*2+f'{char_player}')
-        r3 = re.compile(f'{char_player}'*3)
-        if re.match(r1,b):
+        pattern = rf'{char_player}((.{{0}}|.{{{board_l-1,board_l}}}){char_player}){{{number_of_recurence}}}'
+        r1 = regex.compile(pattern)  # angle and Vertical
+        #pattern = f'{char_player}(.{{{}}}{char_player}){{{number_of_recurence}}}'
+        r2 = regex.compile(pattern)  # vertical
+        #pattern = f'{char_player}(.{{{0}}}{char_player}){{{number_of_recurence}}}'
+        r3 = regex.compile(pattern)  # Check Horizontal
+        print(len(b))
+        if regex.match(r1,b):
             return [True, char_player]
-        if re.match(r2,b):
+        if regex.match(r2,b):
             return [True, char_player]
-        if re.match(r3,b):
+        if regex.match(r3,b):
             return [True, char_player]
+    if len(b) == max_amount:
+        return [True, 'No one']
     return [False,'']
-    '''
-    for i, row in enumerate(board):
-        for j, elem in enumerate(row):
-            if elem == ' ':
-                continue
-
-            if j + 2 < board_l and elem == row[j + 1] == row[j + 2]:
-                return [True, elem]  # Horizontal win
-
-            if i + 2 < board_l and elem == board[i + 1][j] == board[i + 2][j]:
-                return [True, elem]  # Vertical win
-
-            if j + 2 < board_l and i + 2 < board_l and elem == board[i + 1][j + 1] == board[i + 2][j + 2]:
-                return [True, elem]  # Diagonal win (top-left to bottom-right)
-
-            if j - 2 >= 0 and i + 2 < board_l and elem == board[i + 1][j - 1] == board[i + 2][j - 2]:
-                return [True, elem]  # Diagonal win (top-right to bottom-left)
-
-    return [False, ' ']  # No winning condition found
-    '''
 
 
 def print_board(board: list[list[str]]) -> None:
@@ -94,7 +90,7 @@ def print_board(board: list[list[str]]) -> None:
         print(e)
 
 
-def player_turn(board: list[list[str]], player_token: str) -> list[list[list[str]], list[bool, str]]:
+def player_turn(board: list[list[str]], player_token: str, number_of_occurence_to_win: int) -> list[list[list[str]], list[bool, str]]:
     """
     What happen in a player turn
     :param board:the gaming board
@@ -105,7 +101,7 @@ def player_turn(board: list[list[str]], player_token: str) -> list[list[list[str
     p_inp: list[int, int] = player_input(board)
     board = give_board_new_tile(board, p_inp[0], p_inp[1], player_token)
     # win = winning_condition(board)
-    win = three_case_winning(board)
+    win = three_case_winning(board, number_of_occurence_to_win)
     return [board, win]
 
 
@@ -123,20 +119,20 @@ def board_creation(size: int) -> list[list[str]]:
 
 
 def main():
-    board = board_creation(3)
+    board = board_creation(5)
     player_token: [str] = ['X','O']
     i = True
     playing: bool = True
+    number_of_occurence_to_win: int = 2
     while playing:
         i = not i
-        p = player_turn(board, player_token[int(i)])
+        p = player_turn(board, player_token[int(i)], number_of_occurence_to_win)
         board = p[0]
         if p[1][0]:
             print(f'{p[1][1]} WIN')
             print_board(board)
             playing = False
             continue
-
 
 
 if __name__ == '__main__':
