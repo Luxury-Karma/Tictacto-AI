@@ -1,5 +1,5 @@
-import regex
-
+import re
+import AI_Tictacto as AI
 
 def get_integer_input(prompt):
     value = []
@@ -55,15 +55,15 @@ def three_case_winning(board, number_of_recurence):
     for char_player in unique_chars:
         b = b.strip()
         pattern = rf'{char_player}((.{{0}}|.{{{board_l-1,board_l}}}){char_player}){{{number_of_recurence}}}'
-        r1 = regex.compile(pattern)
-        r2 = regex.compile(pattern)
-        r3 = regex.compile(pattern)
+        r1 = re.compile(pattern)
+        r2 = re.compile(pattern)
+        r3 = re.compile(pattern)
         print(len(b))
-        if regex.match(r1, b):
+        if re.match(r1, b):
             return [True, char_player]
-        if regex.match(r2, b):
+        if re.match(r2, b):
             return [True, char_player]
-        if regex.match(r3, b):
+        if re.match(r3, b):
             return [True, char_player]
     if len(b) == max_amount:
         return [True, 'No one']
@@ -96,8 +96,33 @@ def board_creation(size):
     return board
 
 
+
+
+
+# ----------------------------- TESTING AI --------------------------
+
+def test_ai():
+    board = [[' ', ' ', ' ', ' ', ' '],
+             [' ', ' ', ' ', ' ', ' '],
+             [' ', ' ', ' ', ' ', ' '],
+             [' ', ' ', ' ', ' ', ' '],
+             [' ', ' ', ' ', ' ', ' ']]
+    full_board = [['X', 'X', 'Z', ' ', 'Z'],
+                  [' ', 'O', ' ', ' ', ' '],
+                  [' ', ' ', 'K', ' ', ' '],
+                  [' ', ' ', ' ', 'O', ' '],
+                  [' ', ' ', 'K', ' ', ' ']]
+
+    ai = AI.AI(board, 'X', ['O', 'Z', 'K'])
+    ai.board_update(full_board)
+    split_table = ai.split_tables()
+
+# ---------------------------------------------------------------
+
 def main():
-    board = board_creation(3)
+    test_ai()
+
+    board = board_creation(5)
     player_token = ['X', 'O']
     i = True
     playing = True
@@ -115,6 +140,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
