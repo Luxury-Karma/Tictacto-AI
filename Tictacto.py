@@ -119,7 +119,7 @@ def board_creation(size: int) -> list[list[str]]:
 
 
 def main():
-    board = board_creation(5)
+    board = board_creation(3)
     player_token: [str] = ['X','O']
     i = True
     playing: bool = True
@@ -137,3 +137,59 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+'''
+It will look at the board and look value from 0 to 4.
+It will choose by the highest value and that's how it will play
+if 2 value or more have the exact same value it will play one of them randomly
+
+['0', '0', '0', '0', '0'] | ['2', ' ', '2', ' ', '2'] | [' ', ' ', ' ', 'X', ' '] | [' ', ' ', ' ', ' ', 'X']
+['0', '2', '2', '2', '0'] | [' ', '1', '1', '1', ' '] | [' ', ' ', ' ', ' ', ' '] | [' ', 'O', ' ', '4', ' ']
+['0', '2', '3', '2', '0'] | ['2', '1', 'X', '1', '2'] | [' ', 'O', '3', 'O', ' '] | [' ', '3', 'X', ' ', ' ']
+['0', '2', '2', '2', '0'] | [' ', '1', '1', '1', ' '] | [' ', ' ', ' ', ' ', ' '] | [' ', 'O', ' ', ' ', ' ']
+['0', '0', '0', '0', '0'] | ['2', ' ', '2', ' ', '2'] | [' ', ' ', ' ', ' ', ' '] | [' ', ' ', ' ', ' ', ' ']
+This is an exemple with a 5 x 5
+
+this is an exemple in a 3 x 3 
+
+['1', '1', '1'] | ['2', '1', '2'] | ['3', '1', '1'] | ['X', '1', 'O'] | ['X', '1', '2'] | ['X', '1', '2']
+['1', '3', '1'] | ['1', 'O', '1'] | ['1', 'O', 'X'] | ['4', '1', '3'] | ['1', '1', '1'] | ['1', '0', '1']
+['1', '1', '1'] | ['2', '1', '2'] | ['2', '1', 'O'] | ['X', '1', 'O'] | ['2', '1', '2'] | ['2', '0', 'O']
+'''
+class AI :
+
+    '''
+    WILL NEED :
+    1) to evaluate the board position with where it would be the most value to be in
+    2) to be able to do it with more than 2 players
+    3) know who he is and know who the others are
+    4) play on any size board
+
+    WILL NEED OPTIMISATION BADLY i want it to play fast fast fast so it don't take years to play a shit load of games
+    GOAL : BE able to play a shit load of game and create a file of data to train an AI that is data base and play
+            like a pro would
+    '''
+
+    def __init__(self, board: list[list[str]], my_token,ennemi_tokens):
+        self.board = board
+        self.my_token = my_token
+        self.ennemi_tokens = ennemi_tokens
+        self.empty_board = board
+
+    def board_update(self, new_board: list[list[str]]) -> None:
+        self.board = new_board
+
+
+    def split_tables(self) -> list[list[list[str]]]:
+        """
+        Split the board to see him self and the other player individualy
+        :return: a list of individual other player list and its own move
+        """
+        p_boards: list[list[list[str]]] = [[[]]]
+        #split the board
+        for e in self.ennemi_tokens:
+
+        return p_boards
+
