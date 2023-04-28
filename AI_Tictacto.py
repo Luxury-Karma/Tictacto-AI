@@ -55,14 +55,35 @@ class AI:
         print(p_boards)
         return p_boards
 
-    def check_emplacement_arround_cell(self, cell_emplacement: list[int]):
+    def check_emplacement_arround_cell(self, cell_emplacement):
         """
-        :param cell_emplacement: where we whant to look
-        :return: list of integer that represent the emplacement left top,down,left,right
+        :param cell_emplacement: where we want to look
+        :return: list of integer that represent the emplacement top, down, left, right
         """
-        board_down_l = len(self.board)
-        board_side_l = len(self.board[0])
-        return [cell_emplacement[0],board_down_l - cell_emplacement[0],cell_emplacement[1], board_side_l - cell_emplacement[1]]
+        row, col = cell_emplacement
+        return [(-row), (+len(self.board)) - -(row - 1), (-col), (+len(self.board[0]) - col - 1)]
+
+
+    # Try to make a basic around point so if you are X away have a + 2 or + 1 or - 1 or + 0 (ignore)
+    # THIS ONE ONLY ACT KNOWING THE ENNEMIE
+
+    def check_board_for_point(self,cell_emplacement:list[int], looking_board: list[list[int]]) :
+        max_emplacement = self.check_emplacement_arround_cell(self, cell_emplacement)
+        for e,position in enumerate(max_emplacement):
+            point_given: int = 1
+            if abs(e) <= self.how_many_to_win:
+                if position == 1 or position == 2:
+                    # look as much top as possible and closer we are of the limit to win we give more point of +1
+                    for k in range(e):
+                        looking_board[e][cell_emplacement[1]] = looking_board[e][cell_emplacement[1]] + point_given
+
+
+
+
+
+
+
+
 
 
 

@@ -1,0 +1,18 @@
+For the AI Tictacto how we will do how it calculate the board
+
+
+1) It will look at the winning chance of the ennemie and send back the board with how he would play if he was the ennemie
+
+2) It will then look at its own winning chance the same he did with the ennemie
+
+
+IN A 1 V 1
+3) It will then fuse both of them and give/remove point
+    - Need to be sur that if the ennemie is about to win and we can't we block it
+    - Need to be sur that if the ennemie can win but WE can win we do it
+
+
+
+IN A 1 V X
+
+3) we add all boards to gether adding,removing point and with that look if one of the other player blocked victory of an other one and apply
