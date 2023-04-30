@@ -1,5 +1,6 @@
 import re
 import AI_Tictacto as AI
+import minMax_AI_Tictac as minMax
 
 def get_integer_input(prompt):
     value = []
@@ -22,7 +23,7 @@ def get_integer_input(prompt):
 
 
 def player_input(board):
-    coordonate_good = False
+    coordonate_good = True
     coordonate = get_integer_input(f'Enter the coordinate from {1} to {len(board)} ex : 1 2')
     while not coordonate_good:
         if 0 > coordonate[1] >= len(board) or coordonate[1] < 0:
@@ -51,21 +52,24 @@ def three_case_winning(board, number_of_recurence):
     b = ''.join([elem for row in board for elem in row])
     dif = ''.join([elem for row in board for elem in row if elem and elem != ' '])
     unique_chars = sorted(list(set(dif)))
-
     for char_player in unique_chars:
         b = b.strip()
-        pattern = rf'{char_player}((.{{0}}|.{{{board_l-1,board_l}}}){char_player}){{{number_of_recurence}}}'
-        r1 = re.compile(pattern)
-        r2 = re.compile(pattern)
-        r3 = re.compile(pattern)
-        print(len(b))
+
+        pattern = f'{char_player}(.{{{board_l}}}{char_player}){{{number_of_recurence - 1}}}'
+        r1 = re.compile(pattern)  # angle left to right
+        pattern = f'{char_player}(.{{{board_l-1}}}{char_player}){{{number_of_recurence-1}}}'
+        r2 = re.compile(pattern)  # vertical
+        pattern = f'{char_player}(.{{{0}}}{char_player}){{{number_of_recurence-1}}}'
+        r3 = re.compile(pattern)  # Check Horizontal
+
         if re.match(r1, b):
             return [True, char_player]
         if re.match(r2, b):
             return [True, char_player]
         if re.match(r3, b):
             return [True, char_player]
-    if len(b) == max_amount:
+
+    if len(b) == max_amount and unique_chars != []:
         return [True, 'No one']
     return [False, '']
 
@@ -101,41 +105,111 @@ def board_creation(size):
 
 # ----------------------------- TESTING AI --------------------------
 
-#def test_ai():
-#    board = [[' ', ' ', ' ', ' ', ' '],
-#             [' ', ' ', ' ', ' ', ' '],
-#             [' ', ' ', ' ', ' ', ' '],
-#             [' ', ' ', ' ', ' ', ' '],
-#             [' ', ' ', ' ', ' ', ' ']]
-#    full_board = [['X', 'X', 'Z', ' ', 'Z'],
-#                  [' ', 'O', ' ', ' ', ' '],
-#                  [' ', ' ', 'K', ' ', ' '],
-#                  [' ', ' ', ' ', 'O', ' '],
-#                  [' ', ' ', 'K', ' ', ' ']]
-#
-#    ai = AI.AI(board, 'X', ['O', 'Z', 'K'])
-#    ai.board_update(full_board)
-#    split_table = ai.split_tables()
+def Test_AI():
+    # Game state to see what it does
+    Test_game_state = [[' ', ' ', ' ', ' ', ' '],
+                       [' ', ' ', ' ', 'O', ' '],
+                       [' ', ' ', 'O', 'X', ' '],
+                       [' ', ' ', ' ', ' ', 'O'],
+                       ['X', ' ', ' ', 'X', ' ']]
+    Test_game_state = board_creation(21)
+    value_array = board_creation(21)
+    player_tokens = {1: 'X', 2: 'O'}
+    while True:
+        for e, row in enumerate(Test_game_state):
+            for k, cell in enumerate(row):
+                neighbors = minMax.get_directional_neighbors(Test_game_state, e, k, 2)
+                player = 1
+                # array for X
+                value_array[e][k] = minMax.surrounding_evaluation(neighbors, player_tokens, player, ' ', 1, 20, 15, 5, 4, 3)
+
+        print('BOARD FOR X :')
+        best_value_array = [[0,0], 0]
+        for e, row in enumerate(value_array):
+            for k,cell in enumerate(row):
+                if cell > best_value_array[1] and Test_game_state[e][k] == ' ':
+                    best_value_array[0] = [e, k]
+                    best_value_array[1] = cell
+        row = best_value_array[0][0]
+        col = best_value_array[0][1]
+        Test_game_state[row][col] = player_tokens[1]
+        winning = three_case_winning(Test_game_state,3)
+        if winning[0]:
+            print_board(Test_game_state)
+            print(f'{winning[1]} Win')
+            break
+        print(f'The best cell is : {best_value_array[0]} with {best_value_array[1]} points')
+
+
+
+        print('---------')
+        for e, row in enumerate(Test_game_state):
+            for k, cell in enumerate(row):
+                neighbors = minMax.get_directional_neighbors(Test_game_state, e, k, 2)
+                player = 2
+                # array for O
+                value_array[e][k] = minMax.surrounding_evaluation(neighbors, player_tokens, player, ' ', 1, 20, 19, 5, 4, 3)
+        winning = three_case_winning(Test_game_state, 3)
+        if winning[0]:
+            print_board(Test_game_state)
+            print(f'{winning[1]} Win')
+            break
+        for e, row in enumerate(value_array):
+            for k,cell in enumerate(row):
+                if cell > best_value_array[1] and Test_game_state[e][k] == ' ':
+                    best_value_array[0] = [e, k]
+                    best_value_array[1] = cell
+        print(f'The best cell is : {best_value_array[0]} with {best_value_array[1]} points')
+        print('---------')
+        row = best_value_array[0][0]
+        col = best_value_array[0][1]
+        Test_game_state[row][col] = player_tokens[2]
+
+
+
 #
 # ---------------------------------------------------------------
 
 def main():
-    #test_ai()
+    #Test_AI()
+    test = [['X', ' ', ' '],
+            [' ', 'X', 'X'],
+            [' ', ' ', ' ']]
+    test_two = [[' ', ' ', ' ', ' ', ' '],
+                [' ', ' ', ' ', ' ', 'X'],
+                [' ', ' ', ' ', 'X', ' '],
+                [' ', ' ', 'X', ' ', ' '],
+                [' ', ' ', ' ', ' ', ' ']]
+    test_three =[[' ', ' ', ' ', ' ', ' '],
+                [' ', ' ', 'X', ' ', ' '],
+                [' ', ' ', ' ', 'X', ' '],
+                [' ', ' ', ' ', ' ', 'X'],
+                [' ', ' ', ' ', ' ', ' ']]
+    test = [['X', ' ', 'X'],
+            [' ', 'X', ' '],
+            [' ', ' ', ' ']]
+    test_for = [[' ', ' ', 'X'],
+                [' ', 'X', ' '],
+                ['X', ' ', ' ']]
+    print(three_case_winning(test,3)[0])
+    print(three_case_winning(test_two,3)[0])
+    print(three_case_winning(test_three,3)[0])
+    print(three_case_winning(test_for,3)[0])
 
-    board = board_creation(5)
-    player_token = ['X', 'O']
-    i = True
-    playing = True
-    number_of_occurence_to_win = 2
-    while playing:
-        i = not i
-        p = player_turn(board, player_token[int(i)], number_of_occurence_to_win)
-        board = p[0]
-        if p[1][0]:
-            print(f'{p[1][1]} WIN')
-            print_board(board)
-            playing = False
-            continue
+    #board = board_creation(5)
+    #player_token = ['X', 'O']
+    #i = True
+    #playing = True
+    #number_of_occurence_to_win = 2
+    #while playing:
+    #    i = not i
+    #    p = player_turn(board, player_token[int(i)], number_of_occurence_to_win)
+    #    board = p[0]
+    #    if p[1][0]:
+    #        print(f'{p[1][1]} WIN')
+    #        print_board(board)
+    #        playing = False
+    #        continue
 
 
 if __name__ == '__main__':
