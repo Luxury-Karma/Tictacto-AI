@@ -1,10 +1,12 @@
+import copy
+
 import Tictacto as ti
 from typing import Dict, List, Tuple, Union, Optional
 from copy import deepcopy
 
 
 
-def get_directional_neighbors(matrix: List[List[str]], row: int, col: int, distance: int = 1) -> List[str]:
+def get_directional_neighbors(matrix: List[List[str]], row: int, col: int, distance: int = 1) -> list[str]:
     """
     Look arround a specific cell than return the diagonals, horizontal and vertical cells values
     :param matrix: The array where is the cell you need to look
@@ -29,7 +31,10 @@ def get_directional_neighbors(matrix: List[List[str]], row: int, col: int, dista
 
 
 
-def surrounding_evaluation(surrounding: List[str],players_token: {int,str}, active_player: int,empty_cell: str, value_empty: int, value_to_win: int, value_to_block_win: int, value_towards_win: int, value_towards_blocking_win: int, amount_to_win: int) -> float:
+def surrounding_evaluation(surrounding: list[str],players_token: {int,str}, active_player: int,empty_cell: str,
+                           value_empty: int, value_to_win: int, value_to_block_win: int, value_towards_win: int,
+                           value_towards_blocking_win: int, amount_to_win: int, board: list[List[str]],
+                           position_on_the_board:List[int]) -> float:
     """
     Evaluate the worth of a cell by the surrounding
     :param empty_cell: What a empty cell should look like
@@ -53,8 +58,15 @@ def surrounding_evaluation(surrounding: List[str],players_token: {int,str}, acti
             amount_of_ennemies_cell[value] = 0
 
     for e in surrounding:
+
         if e == empty_cell:
             total_value = total_value + value_empty
+            board_copy = copy.deepcopy(board)
+
+            board_copy[position_on_the_board[0]][position_on_the_board[1]] = player
+            if ti.three_case_winning(board_copy, amount_to_win)[0]:
+                total_value = total_value + 10000000
+                return total_value
         elif e == player:
             total_value = total_value + value_towards_win
             amount_of_my_cell = amount_of_my_cell + 1
@@ -68,7 +80,7 @@ def surrounding_evaluation(surrounding: List[str],players_token: {int,str}, acti
                 total_value = total_value + value_towards_blocking_win
     return total_value
 
-def evaluation_function(game_state: List[List[str]], player: int, all_players_token: {}, winning_distance: int) -> float:
+#def evaluation_function(game_state: List[List[str]], player: int, all_players_token: {}, winning_distance: int) -> float:
 
     # Value of empty Cell : +1
     # Value that make win the game : +20
@@ -126,7 +138,8 @@ def generate_moves(game_state) -> list[list[int, int]]:
 
 def maxN(game_state: List[List[str]], depth: int, current_player: int, total_players: int, player_tokens: Dict[int, str]) -> Tuple[Optional[Tuple[int, int]], List[float]]:
     if ti.three_case_winning(game_state, 3)[0] or depth == 0:
-        return None, [evaluation_function(game_state, player, player_tokens[player]) for player in range(1, total_players + 1)]
+        pass
+        #return None, [evaluation_function(game_state, player, player_tokens[player]) for player in range(1, total_players + 1)]
 
     max_scores = [float('-inf')] * total_players
     best_move = None
