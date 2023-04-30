@@ -46,32 +46,59 @@ def give_board_new_tile(board, row_emplacement, emplacement_value, type_to_place
     return board
 
 
+import re
+
 def three_case_winning(board, number_of_recurence):
-    board_l = len(board)
-    max_amount = len(board) * len(board)
-    b = ''.join([elem for row in board for elem in row])
-    dif = ''.join([elem for row in board for elem in row if elem and elem != ' '])
-    unique_chars = sorted(list(set(dif)))
-    for char_player in unique_chars:
-        b = b.strip()
+    board_size = len(board)
 
-        pattern = f'{char_player}(.{{{board_l}}}{char_player}){{{number_of_recurence - 1}}}'
-        r1 = re.compile(pattern)  # angle left to right
-        pattern = f'{char_player}(.{{{board_l-1}}}{char_player}){{{number_of_recurence-1}}}'
-        r2 = re.compile(pattern)  # vertical
-        pattern = f'{char_player}(.{{{0}}}{char_player}){{{number_of_recurence-1}}}'
-        r3 = re.compile(pattern)  # Check Horizontal
+    def check_line(line):
+        count = 0
+        prev_char = None
+        for char in line:
+            if char != ' ' and char == prev_char:
+                count += 1
+                if count == number_of_recurence:
+                    return True, char
+            else:
+                count = 1
+                prev_char = char
+        return False, ''
 
-        if re.match(r1, b):
-            return [True, char_player]
-        if re.match(r2, b):
-            return [True, char_player]
-        if re.match(r3, b):
-            return [True, char_player]
+    # Check horizontal
+    for row in board:
+        result, winner = check_line(row)
+        if result:
+            return [result, winner]
 
-    if len(b) == max_amount and unique_chars != []:
+    # Check vertical
+    for col in range(board_size):
+        result, winner = check_line([board[row][col] for row in range(board_size)])
+        if result:
+            return [result, winner]
+
+    # Check diagonal left-to-right
+    for i in range(board_size):
+        diag = [board[row][row + i] for row in range(board_size - i)] + \
+               [board[row + i][row] for row in range(board_size - i)]
+        result, winner = check_line(diag)
+        if result:
+            return [result, winner]
+
+    # Check diagonal right-to-left
+    for i in range(board_size):
+        diag = [board[row][board_size - 1 - row - i] for row in range(board_size - i)] + \
+               [board[row + i][board_size - 1 - row] for row in range(board_size - i)]
+        result, winner = check_line(diag)
+        if result:
+            return [result, winner]
+
+    # Check if the board is full
+    if all(char != ' ' for row in board for char in row):
         return [True, 'No one']
+
     return [False, '']
+
+
 
 
 def print_board(board):
@@ -172,8 +199,9 @@ def Test_AI():
 
 def main():
     #Test_AI()
-    test = [['X', ' ', ' '],
-            [' ', 'X', 'X'],
+
+    test = [['X', ' ', 'X'],
+            [' ', 'X', ' '],
             [' ', ' ', ' ']]
     test_two = [[' ', ' ', ' ', ' ', ' '],
                 [' ', ' ', ' ', ' ', 'X'],
@@ -185,16 +213,30 @@ def main():
                 [' ', ' ', ' ', 'X', ' '],
                 [' ', ' ', ' ', ' ', 'X'],
                 [' ', ' ', ' ', ' ', ' ']]
-    test = [['X', ' ', 'X'],
-            [' ', 'X', ' '],
-            [' ', ' ', ' ']]
+
     test_for = [[' ', ' ', 'X'],
                 [' ', 'X', ' '],
                 ['X', ' ', ' ']]
-    print(three_case_winning(test,3)[0])
-    print(three_case_winning(test_two,3)[0])
-    print(three_case_winning(test_three,3)[0])
-    print(three_case_winning(test_for,3)[0])
+    test_five = [[' ', 'X', ' '],
+                 [' ', 'X', ' '],
+                 [' ', 'X', ' ']]
+    test_six = [['X', 'X', 'X'],
+                 [' ', ' ', ' '],
+                 [' ', ' ', ' ']]
+    test_seven = [['X', ' ', ' '],
+                  [' ', 'X', 'X'],
+                  [' ', ' ', ' ']]
+    test_height = [[' ', ' ', ' '],
+                  [' ', 'X', ' '],
+                  ['X', ' ', 'X']]
+    print(f'One {three_case_winning(test, 3)[0]}')
+    print(f'Two {three_case_winning(test_two,3)[0]}')
+    print(f'Three : {three_case_winning(test_three, 3)[0]}')
+    print(f'For {three_case_winning(test_for,3)[0]}')
+    print(f'five {three_case_winning(test_five,3)[0]}')
+    print(f'six {three_case_winning(test_six,3)[0]}')
+    print(f'seven {three_case_winning(test_seven,3)[0]}')
+    print(f'heigh {three_case_winning(test_height,3)[0]}')
 
     #board = board_creation(5)
     #player_token = ['X', 'O']
