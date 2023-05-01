@@ -1,6 +1,23 @@
 import re
 
+import os
+
 import minMax_AI_Tictac as minMax
+
+
+def save_file(path: str, files: [[str]]) -> None:
+  """
+  Save a multilayer array into a file
+  :param path: Where the file should be save
+  :param files: Data of the file
+  :return: None
+  """
+  with open(path, 'w', encoding="utf-8") as save:
+    for e in files:
+      for k in e:
+        save.write(f'{k}\n')
+    save.close()
+
 
 def get_integer_input(prompt):
     value = []
@@ -240,42 +257,16 @@ def AI_playing(board: list[list[str]],token: dict[int:str], AI_token: int):
 
 def main():
     #play_against_AI(11, 8)
-    #test_board = [['O', 'X', 'O'],
-    #              ['X', 'X', 'O'],
-    #              ['X', 'O', 'X']]
+    player_token = {1: 'X', 2: 'O'}
+    test_board = [[' ', ' ', ' '],
+                  [' ', ' ', ' '],
+                  [' ', ' ', ' ']]
     #print(three_case_winning(test_board, 3))
-    Ai_vs_Ai(123, 3)
-    #board = board_creation(3)
-    #value_board = board_creation(3)
-    #tokens = {1:'X', 2:'O'}
-    #board = give_board_new_tile(board, 1, 1, 'X')
-    #board = give_board_new_tile(board, 0, 0, 'O')
-    #board = give_board_new_tile(board, 0, 2, 'X')
-    #board = give_board_new_tile(board, 2, 0, 'O')
-    #for i, row in enumerate(board):
-    #    for j, cell in enumerate(row):
-    #        around = minMax.get_directional_neighbors(board, i, j, 2)
-    #        value_board[i][j] = minMax.surrounding_evaluation(around, tokens, 1, ' ', 1, 20, 17, 5, 4, 3, board, [i, j])
-    #print_board(board)
-    #print('-----------------------')
-    #print_board(value_board)
-
-
-    #board = board_creation(5)
-    #player_token = ['X', 'O']
-    #i = True
-    #playing = True
-    #number_of_occurence_to_win = 2
-    #while playing:
-    #    i = not i
-    #    p = player_turn(board, player_token[int(i)], number_of_occurence_to_win)
-    #    board = p[0]
-    #    if p[1][0]:
-    #        print(f'{p[1][1]} WIN')
-    #        print_board(board)
-    #        playing = False
-    #        continue
-
+    #Ai_vs_Ai(3, 3)
+    mimi = minMax.all_options_to_depth(test_board, 3, player_token, 1, 2)
+    save_file('.\\tictacto.txt', mimi)
+    for e in mimi:
+        print_board(e)
 
 if __name__ == '__main__':
     main()

@@ -22,16 +22,17 @@ def get_directional_neighbors(matrix: List[List[str]], row: int, col: int, dista
 
     for i in range(row_start, row_end):
         for j in range(col_start, col_end):
-            if (i == row and j != col) or (i != row and j == col) or (i != row and j != col and abs(i - row) == abs(j - col)):
+            if (i == row and j != col) or (i != row and j == col) or (
+                    i != row and j != col and abs(i - row) == abs(j - col)):
                 neighbors.append(matrix[i][j])
 
     return neighbors
 
 
-def surrounding_evaluation(surrounding: list[str],players_token: {int,str}, active_player: int,empty_cell: str,
+def surrounding_evaluation(surrounding: list[str], players_token: {int, str}, active_player: int, empty_cell: str,
                            value_empty: int, value_to_win: int, value_to_block_win: int, value_towards_win: int,
                            value_towards_blocking_win: int, amount_to_win: int, board: list[List[str]],
-                           position_on_the_board:List[int]) -> float:
+                           position_on_the_board: List[int]) -> float:
     """
     Evaluate the worth of a cell by the surrounding for itself and the other
     :param empty_cell: What a empty cell should look like
@@ -73,31 +74,44 @@ def surrounding_evaluation(surrounding: list[str],players_token: {int,str}, acti
         elif e == player:
             total_value = total_value + value_towards_win
             amount_of_my_cell = amount_of_my_cell + 1
-            if amount_of_my_cell >= amount_to_win-1:
+            if amount_of_my_cell >= amount_to_win - 1:
                 total_value = total_value + value_to_win
         # give value for anything else
         else:
             total_value = total_value + value_to_block_win
             amount_of_ennemies_cell[e] = amount_of_ennemies_cell[e] + 1
             # If another player have more than 2 cell in the zone he might win
-            if amount_of_ennemies_cell[e] >= amount_to_win-1:
+            if amount_of_ennemies_cell[e] >= amount_to_win - 1:
                 total_value = total_value + value_towards_blocking_win
     return total_value
 
 
-
-
-
-def minMax(board: List[List[str]],depth: int, amount_to_win: int, players_token: dict, player_key: int) -> List[List[str]]:
-    if not ti.three_case_winning(board, amount_to_win)[0] and depth>0:
+def all_option_in_one_turn(board: List[List[str]], amount_to_win: int, players_token: dict, player_key: int) -> list[
+    list[list[str]]]:
+    # will contain all the information for all the possible board to the depth
+    all_boards = []
+    if not ti.three_case_winning(board, amount_to_win)[0]:
         all_move = generate_moves(board)
-        copy_board = copy.deepcopy()
+
         for e in all_move:
+            copy_board = copy.deepcopy(board)
+            # play all the moves for this turn
             copy_board[e[0]][e[1]] = players_token[player_key]
+            all_boards.append(copy_board)
+    return all_boards
 
 
-
-
+def all_options_to_depth(board: List[List[str]], amount_to_win: int, player_token: dict, player_key: int, depth: int) -> list[list[str]]:
+    all_game_possible = [board]
+    while depth > 0:
+        for e in all_game_possible:
+            for k in all_option_in_one_turn(e, amount_to_win, player_token, player_key):
+                all_game_possible.append(k)
+            player_key = player_key + 1
+            if player_key > len(player_token):
+                player_key = 1
+        depth = depth - 1
+    return all_game_possible
 
 def give_board_new_tile(board, row_emplacement, emplacement_value, type_to_place):
     new_board = deepcopy(board)
@@ -117,14 +131,3 @@ def generate_moves(game_state) -> list[list[int, int]]:
             if cell == ' ':
                 legal_move.append([e, k])
     return legal_move
-
-
-
-
-
-
-
-
-
-
-
