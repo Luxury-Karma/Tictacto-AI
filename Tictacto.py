@@ -77,17 +77,15 @@ def three_case_winning(board, number_of_recurence):
             return [result, winner]
 
     # Check diagonal left-to-right
-    for i in range(board_size):
-        diag = [board[row][row + i] for row in range(board_size - i)] + \
-               [board[row + i][row] for row in range(board_size - i)]
+    for i in range(board_size * 2 - 1):
+        diag = [board[row][i - row] for row in range(max(i - board_size + 1, 0), min(i + 1, board_size))]
         result, winner = check_line(diag)
         if result:
             return [result, winner]
 
     # Check diagonal right-to-left
-    for i in range(board_size):
-        diag = [board[row][board_size - 1 - row - i] for row in range(board_size - i)] + \
-               [board[row + i][board_size - 1 - row] for row in range(board_size - i)]
+    for i in range(board_size * 2 - 1):
+        diag = [board[row][board_size - 1 - (i - row)] for row in range(max(i - board_size + 1, 0), min(i + 1, board_size))]
         result, winner = check_line(diag)
         if result:
             return [result, winner]
@@ -180,12 +178,12 @@ def Test_AI():
             player_playing = 1
 
 
-def play_against_AI():
+def play_against_AI(board_size: int, winning_condition: int):
     winning = False
-    board = board_creation(3)
+    board = board_creation(board_size)
     token = {1: 'X', 2: 'O'}
     while not winning:
-        player = player_turn(board,token[1], 3)
+        player = player_turn(board,token[1], winning_condition)
         board = player[0]
         winning = player[1][0]
         if winning:
@@ -199,6 +197,25 @@ def play_against_AI():
             print_board(board)
             print('AI Win')
             continue
+
+
+def Ai_vs_Ai(board_size: int, winning_condition: int):
+    winning = False
+    board = board_creation(board_size)
+    token = {1: 'X', 2: 'O'}
+    index = 1
+    while not winning:
+        ai_player = AI_playing(board, token, index)
+        board = ai_player[0]
+        winning = ai_player[1]
+        if winning:
+            print_board(board)
+            print(f'AI {three_case_winning(board,3)[1]} Win')
+            continue
+        index = index + 1
+        if index>len(token):
+            index = 1
+
 
 
 def AI_playing(board: list[list[str]],token: dict[int:str], AI_token: int):
@@ -222,7 +239,26 @@ def AI_playing(board: list[list[str]],token: dict[int:str], AI_token: int):
 # ---------------------------------------------------------------
 
 def main():
-    play_against_AI()
+    #play_against_AI(11, 8)
+    #test_board = [['O', 'X', 'O'],
+    #              ['X', 'X', 'O'],
+    #              ['X', 'O', 'X']]
+    #print(three_case_winning(test_board, 3))
+    Ai_vs_Ai(123, 3)
+    #board = board_creation(3)
+    #value_board = board_creation(3)
+    #tokens = {1:'X', 2:'O'}
+    #board = give_board_new_tile(board, 1, 1, 'X')
+    #board = give_board_new_tile(board, 0, 0, 'O')
+    #board = give_board_new_tile(board, 0, 2, 'X')
+    #board = give_board_new_tile(board, 2, 0, 'O')
+    #for i, row in enumerate(board):
+    #    for j, cell in enumerate(row):
+    #        around = minMax.get_directional_neighbors(board, i, j, 2)
+    #        value_board[i][j] = minMax.surrounding_evaluation(around, tokens, 1, ' ', 1, 20, 17, 5, 4, 3, board, [i, j])
+    #print_board(board)
+    #print('-----------------------')
+    #print_board(value_board)
 
 
     #board = board_creation(5)
