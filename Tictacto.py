@@ -4,6 +4,8 @@ import os
 
 import minMax_AI_Tictac as minMax
 
+import test_zone
+
 
 def save_file(path: str, files: [[str]]) -> None:
   """
@@ -62,8 +64,6 @@ def give_board_new_tile(board, row_emplacement, emplacement_value, type_to_place
     board[row_emplacement][emplacement_value] = type_to_place
     return board
 
-
-import re
 
 def three_case_winning(board, number_of_recurence):
     board_size = len(board)
@@ -261,12 +261,13 @@ def main():
     test_board = [[' ', ' ', ' '],
                   [' ', ' ', ' '],
                   [' ', ' ', ' ']]
+    test_zone.save_json(test_zone.generate_json_data(test_board, 3, 3))
     #print(three_case_winning(test_board, 3))
     #Ai_vs_Ai(3, 3)
-    mimi = minMax.all_options_to_depth(test_board, 3, player_token, 1, 2)
-    save_file('.\\tictacto.txt', mimi)
-    for e in mimi:
-        print_board(e)
+    # mimi = minMax.all_options_to_depth(test_board, 3, player_token, 1, 2)
+    # save_file('.\\tictacto.txt', mimi)
+    # for e in mimi:
+    #     print_board(e)
 
 if __name__ == '__main__':
     main()

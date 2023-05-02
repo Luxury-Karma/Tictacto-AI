@@ -3,6 +3,7 @@ import copy
 import Tictacto as ti
 from typing import Dict, List, Tuple, Optional
 from copy import deepcopy
+import json
 
 
 def get_directional_neighbors(matrix: List[List[str]], row: int, col: int, distance: int = 1) -> list[str]:
@@ -90,6 +91,7 @@ def all_option_in_one_turn(board: List[List[str]], amount_to_win: int, players_t
     list[list[str]]]:
     # will contain all the information for all the possible board to the depth
     all_boards = []
+    winning = False
     if not ti.three_case_winning(board, amount_to_win)[0]:
         all_move = generate_moves(board)
 
@@ -103,15 +105,41 @@ def all_option_in_one_turn(board: List[List[str]], amount_to_win: int, players_t
 
 def all_options_to_depth(board: List[List[str]], amount_to_win: int, player_token: dict, player_key: int, depth: int) -> list[list[str]]:
     all_game_possible = [board]
+    finished_board = []
+    board_l = len(board)
+    data_path = f"{board_l}x{board_l}"
+    data_base = {data_path: {}}
+
     while depth > 0:
-        for e in all_game_possible:
-            for k in all_option_in_one_turn(e, amount_to_win, player_token, player_key):
+        depth_state = 0
+        for i, e in enumerate(all_game_possible):
+            data_secondary_path = {f"option {i}": {}}
+            for j, k in enumerate(all_option_in_one_turn(e, amount_to_win, player_token, player_key)):
+                data_final_path = f"option {j}"
                 all_game_possible.append(k)
+                dict_info = {
+                    "Board": f"{k}",
+                    "Depth": f"{depth_state}",
+                    "Winning": f"{ti.three_case_winning(k,amount_to_win)}"
+                }
+                data_secondary_path.setdefault(data_final_path, {}).update(dict_info)
+                data_base[data_path].update(data_secondary_path)
+            finished_board.append(e)
+            all_game_possible.remove(e)
+
             player_key = player_key + 1
+            depth_state = depth_state + 1
             if player_key > len(player_token):
                 player_key = 1
         depth = depth - 1
+        with open('Tic_data.json','w') as file:
+            json.dump(data_base, file, indent=6)
+        file.close()
     return all_game_possible
+
+
+
+
 
 def give_board_new_tile(board, row_emplacement, emplacement_value, type_to_place):
     new_board = deepcopy(board)
