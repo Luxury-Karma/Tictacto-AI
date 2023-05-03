@@ -216,6 +216,7 @@ def play_against_AI(board_size: int, winning_condition: int):
             continue
 
 
+
 def Ai_vs_Ai(board_size: int, winning_condition: int):
     winning = False
     board = board_creation(board_size)
@@ -232,7 +233,6 @@ def Ai_vs_Ai(board_size: int, winning_condition: int):
         index = index + 1
         if index>len(token):
             index = 1
-
 
 
 def AI_playing(board: list[list[str]],token: dict[int:str], AI_token: int):
