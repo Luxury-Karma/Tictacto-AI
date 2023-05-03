@@ -14,7 +14,7 @@ import datetime
 
 
 moves_done = 0
-
+elapse = []
 
 def are_boards_mirrored(board1, board2):
     size = len(board1)
@@ -82,11 +82,7 @@ def get_mirrored_versions(board):
     return mirrored_versions
 
 
-# TODO: REDOO ALL
-def generate_json_data(board: list[list[str]], current_depth: int, max_depth: int, amount_to_win: int, player_token: dict, player_key: int, point_of_board: int, memo: dict = {}, path: str = "") -> dict:
-    global moves_done
-    global elapse
-    # Check if the current board or any mirrored version already exists in the memo dictionary
+def check_memo(board, memo):
     board_key = get_key(board)
     mirrored_versions = get_mirrored_versions(board)
     mirrored_keys = [get_key(mirrored_board) for mirrored_board in mirrored_versions]
@@ -97,12 +93,32 @@ def generate_json_data(board: list[list[str]], current_depth: int, max_depth: in
             existing_key = key
             break
 
+    return board_key, existing_key
+
+
+def prepare_next_move(board, move, player_key, player_token, memo, amount_to_win):
+    next_board = minMax.give_board_new_tile(board, move[0], move[1], player_token[player_key])
+    next_player_key = 2 if player_key == 1 else 1
+
+    # Memoization logic
+    next_board_key = get_key(next_board)
+    if next_board_key in memo:
+        next_board_worth = memo[next_board_key][list(memo[next_board_key].keys())[0]]["point of the move"]
+    else:
+        next_board_worth = calculate_board_worth_for_player(player_token, player_key, next_board, amount_to_win, ' ', 1, 20, 15, 7, 5)
+
+    return next_board, next_board_worth, next_player_key
+
+# TODO: Redo the data base how its built
+# TODO : It need to be parallel and making call and not DEEP DIIIIVE
+def generate_json_data(board: list[list[str]], current_depth: int, max_depth: int, amount_to_win: int, player_token: dict, player_key: int, point_of_board: int, memo: dict = {}, path: str = "") -> dict:
+    global moves_done
+    global elapse
+
+    board_key, existing_key = check_memo(board, memo)
+
     if existing_key is not None:
         return {"ref": memo[existing_key]["path"]}
-    # Check if the current board already exists in the memo dictionary
-    board_key = get_key(board)
-    if board_key in memo:
-        return {"ref": memo[board_key]["path"]}
 
     key = f"Depth {current_depth}"
     data_structure = create_data_structure(key, board, current_depth, amount_to_win, point_of_board)
@@ -112,49 +128,40 @@ def generate_json_data(board: list[list[str]], current_depth: int, max_depth: in
 
     next_possible_moves = minMax.generate_moves(board)
     option_count = 0
-    progress = -1
 
     for move in next_possible_moves:
         tic = time.perf_counter()
-        next_board = minMax.give_board_new_tile(board, move[0], move[1], player_token[player_key])
         option_name = f"Option {option_count}"
-        next_player_key = 2 if player_key == 1 else 1
-
-        # Memoization logic
-        next_board_key = get_key(next_board)
-        if next_board_key in memo:
-            next_board_worth = memo[next_board_key][list(memo[next_board_key].keys())[0]]["point of the move"]
-        else:
-           next_board_worth = calculate_board_worth_for_player(player_token, player_key, next_board, amount_to_win, ' ', 1, 20, 15, 7, 5)
+        next_board, next_board_worth, next_player_key = prepare_next_move(board, move, player_key, player_token, memo, amount_to_win)
 
         next_move_data = generate_json_data(
             next_board, current_depth + 1, max_depth, amount_to_win, player_token, next_player_key, next_board_worth, memo, path=f"{path}/{key}/Next Possible Move/{option_name}")
         data_structure[key]["Next Possible Move"][option_name] = next_move_data
         option_count += 1
 
-
         moves_done += 1
-
-        r = "\\","|","/","-"
+        progress = update_progress(moves_done, max_depth, board)
 
         toc = time.perf_counter()
-        elapse.append(toc-tic)
-        expected_move_still_needed = (math.factorial(len(board) * len(board)) * max_depth) - moves_done
-        t = (statistics.median(elapse)*expected_move_still_needed)
+        elapse.append(toc - tic)
 
-        clear_screen()
-        print(f'{r[moves_done%4]} calculating expected time {str(t)},expected_move_still_needed{expected_move_still_needed}')
-        #print(f'{elapse}')
-    # Memoize the current data structure with its path before returning it
     data_structure["path"] = path
     memo[board_key] = data_structure
     return data_structure
 
 
+def update_progress(moves_done, max_depth, board):
+    r = "\\", "|", "/", "-"
+    expected_move_still_needed = (math.factorial(len(board) * len(board)) * max_depth) - moves_done  # Move this line up
 
+    if not elapse:  # Check if elapse is empty
+        t = 0
+    else:
+        t = (statistics.median(elapse) * expected_move_still_needed)
 
-
-
+    clear_screen()
+    print(f'{r[moves_done % 4]} calculating expected time {str(t)}, expected_move_still_needed{expected_move_still_needed}')
+    return moves_done / max_depth
 
 
 def calculate_board_worth_for_player(players_tokens: dict[int:dict], evaluating_player: int, board: list[list[str]], distance_to_win: int,
