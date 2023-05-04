@@ -260,8 +260,131 @@ def count_possibilities(board, current_depth, max_depth, amount_to_win, players_
 
 
 
+import copy
+from typing import Dict, List
+
+def surrounding_evaluation(surrounding: List[str], players_token: Dict[int, str], active_player: int, empty_cell: str,
+                           value_empty: int, value_to_win: int, value_to_block_win: int, value_towards_win: int,
+                           value_towards_blocking_win: int, amount_to_win: int, board: List[List[str]],
+                           position_on_the_board: List[int]) -> int:
+    """
+    Evaluate the worth of a cell by the surrounding for itself and the others.
+
+    :param surrounding: all the surrounding of one cell
+    :param players_token: Who is in the game
+    :param active_player: Who am I evaluating for
+    :param empty_cell: What an empty cell should look like
+    :param value_empty: How much an empty cell is worth
+    :param value_to_win: How much a Winning is worth
+    :param value_to_block_win: How much blocking a win is worth
+    :param value_towards_win: How much a cell that gives a potential win is worth
+    :param value_towards_blocking_win: how much blocking a potential win is worth
+    :param amount_to_win: The number of cells in a row required to win
+    :param board: The current game board
+    :param position_on_the_board: The position on the board being evaluated
+    :return: the value of the specific cell
+    """
+    total_value = 0  # The value of the given tile
+    player = players_token[active_player]["token"]  # Get the string for the player evaluating the tile
+    amount_of_cell = {value["token"]: 0 for key, value in
+                      players_token.items()}  # Create a dict with counts of other players' cells around
+
+    for e in surrounding:  # Verify all the surroundings of this specific tile
+        if e == empty_cell:
+            total_value += value_empty  # Give X amount of points for each empty tile
+        elif e == player:
+            total_value += value_towards_win
+            amount_of_cell[e] += 1
+            if amount_of_cell[e] >= amount_to_win - 1:
+                total_value += value_to_win
+        else:
+            total_value += value_to_block_win
+            amount_of_cell[e] += 1
+            if amount_of_cell[e] >= amount_to_win - 1:
+                total_value += value_towards_blocking_win
+
+    board_copy = copy.deepcopy(board)  # Ensure we do not modify the initial board
+
+    for _, value in players_token.items():
+        actual_key = value["token"]  # Easy way to get the value of the actual string
+        amount_of_cell[actual_key] += 1  # Add to the dictionary one more occurrence
+        board_copy[position_on_the_board[0]][
+            position_on_the_board[1]] = actual_key  # Place the cell on the board to test if it's a winning tile
+
+        is_there_winner, winner = ti.three_case_winning(board_copy,
+                                                        amount_to_win)  # Check if there is a winner in that world
+
+        if is_there_winner:
+            if winner == 'No one':
+                total_value += 500  # Points for a draw
+            elif winner == player:
+                total_value += 10000000  # Points for a win
+            else:
+                total_value += 10000  # Points for blocking a win
+
+    return total_value
+
+
+
+
+
 
 def main():
+    size = 5
+    amount_to_win = 3
+    players_token = {1: {'token': 'X', 'amount played': 0}, 2: {'token': 'O', 'amount played': 0}}
+    player_key = 1
+    tests_boards = [
+        [['X', ' ', 'X', ' ', 'X'],
+         ['O', ' ', ' ', 'O', ' '],
+         ['O', ' ', 'X', ' ', 'X'],
+         [' ', ' ', ' ', 'O', ' '],
+         [' ', ' ', ' ', ' ', 'O']],
+
+        [[' ', ' ', ' ', ' ', ' '],
+         [' ', ' ', ' ', ' ', ' '],
+         [' ', ' ', ' ', ' ', ' '],
+         [' ', ' ', ' ', ' ', ' '],
+         [' ', ' ', ' ', ' ', ' ']],
+
+        [['X', ' ', 'O', ' ', 'X'],
+         [' ', ' ', ' ', ' ', ' '],
+         ['O', ' ', 'X', ' ', 'O'],
+         [' ', ' ', ' ', ' ', ' '],
+         ['X', ' ', 'O', ' ', 'X']],
+
+        [['X', 'O', 'X', 'O', 'X'],
+         ['O', 'X', 'O', 'X', 'O'],
+         ['X', 'O', 'X', 'O', 'X'],
+         ['O', 'X', 'O', 'X', 'O'],
+         ['X', 'O', 'X', 'O', 'X']]
+    ]
+
+    players_token_old = {1: 'X', 2: 'O'}
+
+    # Old version
+    start_time = time.time()
+    for board in tests_boards:
+        for e, row in enumerate(board):
+            for k, cell in enumerate(row):
+                minMax.surrounding_evaluation(minMax.get_directional_neighbors(board, e, k, 3), players_token_old,
+                                              player_key, ' ', 1, 20, 15, 7, 4, amount_to_win, board, [e, k])
+    end_time = time.time()
+    old_version_times = end_time - start_time
+
+    start_time = time.time()
+    # New version
+    for board in tests_boards:
+        for e, row in enumerate(board):
+            for k, cell in enumerate(row):
+                surrounding_evaluation(minMax.get_directional_neighbors(board, e, k, 3), players_token, player_key,
+                                       ' ', 1, 20, 15, 7, 4, amount_to_win, board, [e, k])
+    end_time = time.time()
+    new_version_times= end_time - start_time
+
+    print(f'old version time : {old_version_times}, new version time : {new_version_times} the new version is {(new_version_times/old_version_times)* 100}% faster')
+
+    """
     size = 5
     amount_to_win = 3
     players_token = {1: {'token': 'X', 'amount played': 0}, 'token': 'X', 'amount played': 0}
@@ -291,6 +414,9 @@ def main():
     # Save the memo dictionary to the JSON file
     with open(f'{size}x{size}.json', 'w') as outfile:
         json.dump(dict(memo), outfile, indent=4)
+    """
+
+
 
 if __name__ == '__main__':
     main()
@@ -300,61 +426,3 @@ if __name__ == '__main__':
 
 # surounding evaluation :
 
-
-import copy
-
-def surrounding_evaluation(surrounding: list[str], players_token: {int, str}, active_player: int, empty_cell: str,
-                           value_empty: int, value_to_win: int, value_to_block_win: int, value_towards_win: int,
-                           value_towards_blocking_win: int, amount_to_win: int, board: list[list[str]],
-                           position_on_the_board: list[int]) -> float:
-    """
-    Evaluate the worth of a cell by the surrounding for itself and the other
-    :param empty_cell: What a empty cell should look like
-    :param surrounding: all the surrounding of one cell
-    :param players_token: Who is in the game
-    :param active_player: Who am I evaluating for
-    :param value_empty: How much an empty cell worth
-    :param value_to_win: How much a Winning worth
-    :param value_to_block_win: How much blocking a win worth
-    :param value_towards_win: How much a cell that give a potential win worth
-    :param value_towards_blocking_win: how much blocking a potential win worth
-    :return: the value of the specific cell
-    """
-    total_value: float = 0
-    amount_of_cell: dict = {}
-    player = players_token[active_player]['token']
-    # Find all the others possible cells
-    for key, value in players_token.items():
-        amount_of_cell[value["token"]]: int = 0
-    for _, value in players_token.items():
-        actual_key = value["token"]
-        board_copy = copy.deepcopy(board)
-        amount_of_cell[actual_key] = amount_of_cell[actual_key] + 1
-        board_copy[position_on_the_board[0]][position_on_the_board[1]] = actual_key
-        for e in surrounding:
-            # give value for the empty cells around
-            if e == empty_cell:
-                total_value = total_value + value_empty
-            # give value for one other cell of its own
-            elif e == player:
-                total_value = total_value + value_towards_win
-                amount_of_cell[actual_key] = amount_of_cell[actual_key] + 1
-                if amount_of_cell[actual_key] >= amount_to_win - 1:
-                        total_value = total_value + value_to_win
-            # give value for anything else
-            else:
-                total_value = total_value + value_to_block_win
-                amount_of_cell[actual_key] = amount_of_cell[actual_key] + 1
-                # If another player have more than 2 cell in the zone he might win
-                if amount_of_cell[actual_key] >= amount_to_win - 1:
-                    total_value = total_value + value_towards_blocking_win
-        is_there_winner = ti.three_case_winning(board_copy, amount_to_win)  # evaluation if there is a winner in that world
-        if is_there_winner[0] and is_there_winner[1] != '':
-            if is_there_winner[1] == 'No one':
-                total_value = total_value + 500  # points for an equality
-            else:
-                if is_there_winner[1] == player:
-                    total_value = total_value + 10000000  # amount of point to win
-                else:
-                    total_value = total_value + 1000000  # amount of point to block a win
-    return total_value
