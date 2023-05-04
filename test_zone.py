@@ -191,16 +191,17 @@ def generate_json_data(board: list[list[str]], current_depth: int, max_depth: in
 
 
 def update_progress(moves_done, max_depth, total_possibilities, board):
-    r = "\\", "|", "/", "-"
-    expected_move_still_needed = total_possibilities - moves_done
 
-    if not elapse:  # Check if elapse is empty
-        t = 0
-    else:
-        t = (statistics.median(elapse) * expected_move_still_needed)
+    r = "\\", "|", "/", "-"
+    #expected_move_still_needed = total_possibilities - moves_done
+
+    #if not elapse:  # Check if elapse is empty
+    #    t = 0
+    #else:
+    #    t = (statistics.median(elapse) * expected_move_still_needed)
 
     clear_screen()
-    print(f'{r[moves_done % 4]} calculating expected time {str(t)}, expected_move_still_needed{expected_move_still_needed}')
+    print(f'{r[moves_done % 4]} calculating expected time , expected_move_still_needed ')
     return moves_done / max_depth
 
 
@@ -229,8 +230,6 @@ def calculate_board_worth_for_player(players_tokens: dict[int:dict], evaluating_
     memo[board_key] = points
     return points
 
-
-from itertools import repeat
 
 def count_possibilities_helper(args):
     return count_possibilities(*args)
@@ -271,74 +270,16 @@ def count_possibilities(board, current_depth, max_depth, amount_to_win, players_
 
 # -------------------------------- OPTIMISE TO REPLACE ZONE ----------------------------------
 
-def get_directional_neighbors(matrix: List[List[str]], row: int, col: int, distance: int = 1) -> List[Tuple[int, int]]:
-    neighbors = []
-
-    for d_row in range(-distance, distance + 1):
-        for d_col in range(-distance, distance + 1):
-            if d_row == 0 and d_col == 0:
-                continue
-
-            new_row = row + d_row
-            new_col = col + d_col
-
-            if 0 <= new_row < len(matrix) and 0 <= new_col < len(matrix[0]) and (
-                    d_row == 0 or d_col == 0 or abs(d_row) == abs(d_col)):
-                neighbors.append((new_row, new_col))
-
-    return neighbors
 
 
-def surrounding_evaluation(surrounding: List[Tuple[int, int]], players_token: Dict[int, str], active_player: int, empty_cell: str,
-                           value_empty: int, value_to_win: int, value_to_block_win: int, value_towards_win: int,
-                           value_towards_blocking_win: int, amount_to_win: int, board: List[List[str]],
-                           position_on_the_board: List[int]) -> int:
-    total_value = 0
-    player = players_token[active_player]["token"]
-    amount_of_cell = {value["token"]: 0 for key, value in players_token.items()}
-
-    for coord in surrounding:
-        e = board[coord[0]][coord[1]]
-        if e == empty_cell:
-            total_value += value_empty
-        elif e == player:
-            total_value += value_towards_win
-            amount_of_cell[e] += 1
-            if amount_of_cell[e] >= amount_to_win - 1:
-                total_value += value_to_win
-        else:
-            total_value += value_to_block_win
-            amount_of_cell[e] += 1
-            if amount_of_cell[e] >= amount_to_win - 1:
-                total_value += value_towards_blocking_win
-
-    board_copy = copy.deepcopy(board)
-
-    for _, value in players_token.items():
-        actual_key = value["token"]
-        amount_of_cell[actual_key] += 1
-        board_copy[position_on_the_board[0]][position_on_the_board[1]] = actual_key
-
-        is_there_winner, winner = ti.three_case_winning(board_copy, amount_to_win)
-
-        if is_there_winner:
-            if winner == 'No one':
-                total_value += 500
-            elif winner == player:
-                total_value += 10000000
-            else:
-                total_value += 10000
-
-    return total_value
 
 #--------------------------------------------------------------------------------------------
 
 
+from multiprocessing.pool import ThreadPool
+
+
 def main():
-    size = 5
-    amount_to_win = 3
-    players_token = {1: {'token': 'X', 'amount played': 0}, 2: {'token': 'O', 'amount played': 0}}
-    player_key = 1
     tests_boards = [
         [['X', ' ', 'X', ' ', 'X'],
          ['O', ' ', ' ', 'O', ' '],
@@ -364,43 +305,13 @@ def main():
          ['O', 'X', 'O', 'X', 'O'],
          ['X', 'O', 'X', 'O', 'X']]
     ]
-
-    players_token_old = {1: 'X', 2: 'O'}
-
-    # Old version
-    start_time = time.time()
-    for board in tests_boards:
-        for e, row in enumerate(board):
-            for k, cell in enumerate(row):
-                minMax.surrounding_evaluation(minMax.get_directional_neighbors(board, e, k, 3), players_token_old,
-                                              player_key, ' ', 1, 20, 15, 7, 4, amount_to_win, board, [e, k])
-    end_time = time.time()
-    old_version_times = end_time - start_time
-
-    start_time = time.time()
-    # New version
-    for board in tests_boards:
-        for e, row in enumerate(board):
-            for k, cell in enumerate(row):
-                surrounding_evaluation(get_directional_neighbors(board, e, k, 3), players_token, player_key,
-                                       ' ', 1, 20, 15, 7, 4, amount_to_win, board, [e, k])
-    end_time = time.time()
-    new_version_times= end_time - start_time
-
-    print(f'old version time : {old_version_times}, new version time : {new_version_times} the new version is {(new_version_times/old_version_times)* 100}% faster')
-
-    """
     size = 5
     amount_to_win = 3
     players_token = {1: {'token': 'X', 'amount played': 0}, 'token': 'X', 'amount played': 0}
     player_key = 1
     board = ti.board_creation(size)
-    player_actions: list[int] = []
     max_depth = 10
-    total_possibilities = count_possibilities(board, 0, max_depth, amount_to_win, players_token, player_key)
-    print(f"Total number of possibilities: {total_possibilities}")
 
-    board_worth = calculate_board_worth_for_player(players_token, player_key, board, amount_to_win, ' ', 1, 20, 15, 7, 5)
 
     # Use a shared memo dictionary to store results of completed tasks
     manager = Manager()
@@ -409,18 +320,22 @@ def main():
     # Partially apply the function to make it suitable for parallel execution
     generate_json_data_with_memo = partial(generate_json_data, memo=memo)
 
-    # Parallelize the execution using a process pool
-    with Pool(processes=4) as pool:
-        _ = pool.apply(generate_json_data_with_memo, (board, 0, max_depth, amount_to_win, players_token, player_key, board_worth))
+    board_worth = calculate_board_worth_for_player(players_token, player_key, board, amount_to_win, ' ', 1, 20, 15, 7,
+                                                   5, memo)
+    # Parallelize the execution using a thread pool
+    with ThreadPool(processes=4) as pool:
+        results = pool.imap_unordered(generate_json_data_with_memo,
+                                      (board, 0, max_depth, amount_to_win, players_token, player_key, board_worth))
 
-    # Now update the progress using the total_possibilities calculated earlier
-    progress = update_progress(moves_done, max_depth, total_possibilities, board)
+        # Update progress as the results are being computed
+        total_possibilities = 0
+        for result in results:
+            total_possibilities += 1
+            progress = update_progress(moves_done, max_depth, total_possibilities, board)
 
     # Save the memo dictionary to the JSON file
     with open(f'{size}x{size}.json', 'w') as outfile:
         json.dump(dict(memo), outfile, indent=4)
-    """
-
 
 
 if __name__ == '__main__':
