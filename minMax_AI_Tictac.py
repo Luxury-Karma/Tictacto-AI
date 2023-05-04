@@ -48,25 +48,26 @@ def surrounding_evaluation(surrounding: list[str], players_token: {int, str}, ac
     :return: the value of the specific cell
     """
     total_value: float = 0
-    amount_of_my_cell: int = 0
-    amount_of_ennemies_cell: dict = {}
-    player = players_token[active_player]
+    amount_of_cell: dict = {}
+    player = players_token[active_player]['token']
     # Find all the others possible cells
-    for key, value in players_token.items():
-        if key != active_player:
-            amount_of_ennemies_cell[value] = 0
+    for key, _ in players_token.items():
+        amount_of_cell[key]["actual value"]:int = 0
+
 
     for e in surrounding:
         board_copy = copy.deepcopy(board)
-        for _, value in players_token.items():
-            if value != player:
-                board_copy[position_on_the_board[0]][position_on_the_board[1]] = value
+        for key, value in players_token.items():
+            if value['token'] != player:
+                board_copy[position_on_the_board[0]][position_on_the_board[1]] = value['token']
+                amount_of_cell[key]["actual value"] = amount_of_cell[key]["actual value"] + 1
                 if ti.three_case_winning(board_copy, amount_to_win)[0]:
                     total_value = total_value + 5000
-            elif value == player:
-                board_copy[position_on_the_board[0]][position_on_the_board[1]] = value
-                if ti.three_case_winning(board_copy, amount_to_win)[0]:
-                    total_value = total_value + 10000000
+            elif value['token'] == player:
+                board_copy[position_on_the_board[0]][position_on_the_board[1]] = value['token']
+                if value['amount played'] + 1 >= amount_to_win:
+                    if ti.three_case_winning(board_copy, amount_to_win)[0]:
+                        total_value = total_value + 10000000
 
         # give value for the empty cells around
         if e == empty_cell:

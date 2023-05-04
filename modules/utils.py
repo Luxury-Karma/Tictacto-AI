@@ -1,4 +1,5 @@
 import os
+
 def clear_screen():
     if (os.name == 'posix'):
         os.system('clear')
@@ -74,3 +75,6 @@ def get_integer_input(prompt):
         else:
             print('Need to be in the model of 2 numbers like this :  12 5 (first number if the colon second is row)')
     return value
+
+
+
