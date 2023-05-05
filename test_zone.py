@@ -287,7 +287,7 @@ import json
 from json.decoder import JSONDecodeError
 
 def generate_json_data(board: list[list[str]], depth: int, amount_to_win: int, player_token: dict, player_key: int,
-                       id: int) -> dict:
+                       id: int) -> None:
     global moves_done
     global elapse
     board_data = [board]
@@ -321,33 +321,32 @@ def generate_json_data(board: list[list[str]], depth: int, amount_to_win: int, p
                 processed_boards.add(tuple(map(tuple, board_copy)))
 
                 id += 1
-
+            board_data.remove(depth_board)  # remove the board already looked at
             # Lets save at each depth
             # Read the existing data from the file
-            try:
-                with open(filename, 'r') as infile:
-                    existing_data = json.load(infile)
-            except FileNotFoundError:
-                existing_data = {}
-            except JSONDecodeError:
-                print(f'Error: The JSON file {filename} is broken. Skipping this file.')
-                existing_data = {}
+        try:
+            with open(filename, 'r') as infile:
+                existing_data = json.load(infile)
+        except FileNotFoundError:
+            existing_data = {}
+        except JSONDecodeError:
+            print(f'Error: The JSON file {filename} is broken. Skipping this file.')
+            existing_data = {}
 
-            # Combine the existing data with the new data
-            for data in json_update_data:
-                key = list(data.keys())[0]  # Get the key of the current data dictionary
-                existing_data[key] = data[key]  # Add the current data to the existing data using the key
+        # Combine the existing data with the new data
+        for data in json_update_data:
+            key = list(data.keys())[0]  # Get the key of the current data dictionary
+            existing_data[key] = data[key]  # Add the current data to the existing data using the key
 
-            # Save the updated data back to the file
-            with open(filename, 'w') as outfile:
-                json.dump(existing_data, outfile, indent=4)
-            print(f'Saving we are at : {id}')
-
-            board_data.remove(depth_board)  # remove the board already looked at
+        # Save the updated data back to the file
+        with open(filename, 'w') as outfile:
+            json.dump(existing_data, outfile, indent=4)
+        print(f'Saving we are at : {id}')
         actual_depth += 1
+        player_key += 1
+        if player_key > len(player_token):
+            player_key = 1
         depth -= 1
-
-    return {}
 
 
 
