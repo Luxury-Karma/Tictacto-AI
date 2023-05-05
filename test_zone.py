@@ -273,30 +273,83 @@ def generate_json_data(board: list[list[str]], current_depth: int, max_depth: in
 
 # -------------------------------- OPTIMISE TO REPLACE ZONE ----------------------------------
 
+def calculate_board_worth(board: list[list[str]], amount_to_win: int, player_token: dict, player_key: int) -> int:
+    total_board_worth: int = 0
+    for e, row in enumerate(board):
+        for k, cell in enumerate(row):
+            total_board_worth += minMax.surrounding_evaluation(
+                minMax.get_directional_neighbors(board, e, k, amount_to_win), player_token, player_key, ' ',
+                1, 20, 15, 7, 4, amount_to_win, board, [e, k])  # Calculate the worth of a specific board
+    return total_board_worth
+
+
+import json
+from json.decoder import JSONDecodeError
 
 def generate_json_data(board: list[list[str]], depth: int, amount_to_win: int, player_token: dict, player_key: int,
                        id: int) -> dict:
     global moves_done
     global elapse
-    full_json_data = []
-    while depth != 0:
+    board_data = [board]
+    actual_depth = 0
+    filename = f'{len(board)}x{len(board)}.json'
+    processed_boards = set()
 
-        all_possible_move = minMax.generate_moves(board)
-        json_update_data = []
-        for row, cell in all_possible_move:
-            board_copy = copy.deepcopy(board)
-            board_copy[row][cell] = player_token[player_key]["token"]
-            board_points = minMax.surrounding_evaluation(
-                minMax.get_directional_neighbors(board_copy,row, cell, amount_to_win), player_token, player_key, ' ',
-            1, 20, 15, 7, 4, amount_to_win, board_copy, [row,cell])
-            json_data = create_data_structure(str(id), board_copy, depth, amount_to_win, board_points, player_token[player_key]["token"])
-            json_update_data.append(json_data)
-            id =+ 1
-        with open(f'{len(board)}x{len(board)}.json', 'w') as outfile:
-            json.dump(json_update_data, outfile, indent=4)
-        full_json_data.append(json_update_data)
+    while depth > 0:
+        for depth_board in board_data:
+            all_possible_move = minMax.generate_moves(board)
+            json_update_data = []
+
+            # Calculation for one depth
+            for row, cell in all_possible_move:
+                board_copy = copy.deepcopy(depth_board)
+                board_copy[row][cell] = player_token[player_key]["token"]
+
+                # Check if the board or its mirrored version has been processed
+                if any(tuple(map(tuple, b)) in processed_boards for b in [board_copy] + get_mirrored_versions(board_copy)):
+                    continue
+
+                board_worth = calculate_board_worth(board_copy, amount_to_win, player_token, player_key)  # Give how much the board worth
+
+                json_data = create_data_structure(str(id), board_copy, actual_depth, amount_to_win, board_worth, player_token[player_key]["token"]) # Format the data
+                json_update_data.append(json_data)  # Keep all the json formated data for one depth
+
+                if not json_data[str(id)]["Winning"]:
+                    board_data.append(board_copy)
+
+                # Mark the board as processed
+                processed_boards.add(tuple(map(tuple, board_copy)))
+
+                id += 1
+
+            # Lets save at each depth
+            # Read the existing data from the file
+            try:
+                with open(filename, 'r') as infile:
+                    existing_data = json.load(infile)
+            except FileNotFoundError:
+                existing_data = {}
+            except JSONDecodeError:
+                print(f'Error: The JSON file {filename} is broken. Skipping this file.')
+                existing_data = {}
+
+            # Combine the existing data with the new data
+            for data in json_update_data:
+                key = list(data.keys())[0]  # Get the key of the current data dictionary
+                existing_data[key] = data[key]  # Add the current data to the existing data using the key
+
+            # Save the updated data back to the file
+            with open(filename, 'w') as outfile:
+                json.dump(existing_data, outfile, indent=4)
+            print(f'Saving we are at : {id}')
+
+            board_data.remove(depth_board)  # remove the board already looked at
+        actual_depth += 1
+        depth -= 1
 
     return {}
+
+
 
 
 
@@ -313,7 +366,7 @@ def main():
     players_token = {1: {'token': 'X', 'amount played': 0}, 2: {'token': 'O', 'amount played': 0}}
     player_key = 1
     board = ti.board_creation(size)
-    max_depth = 3
+    max_depth = 10
     first_id = 0
     generate_json_data(board, max_depth, amount_to_win, players_token, player_key, first_id)
 
