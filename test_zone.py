@@ -41,7 +41,6 @@ def create_data_structure(key:str, board:list[list[str]], depth: int, amount_to_
             "Winning": ti.three_case_winning(board, amount_to_win)[0],
             "Player": player_token,
             "point of the move": point_of_the_board,
-            "Next Possible Move": {}
         }
     }
     return t if all(t) else None
@@ -110,47 +109,8 @@ def prepare_next_move(board, move, player_key, player_token, memo, amount_to_win
     return next_board, next_board_worth, next_player_key
 
 
-# TODO: Redo the data base how its built
-# TODO : It need to be parallel and making call and not DEEP DIIIIVE
-""""
-def generate_json_data(board: list[list[str]], current_depth: int, max_depth: int, amount_to_win: int, player_token: dict, player_key: int, point_of_board: int, memo: dict = {}, path: str = "") -> dict:
-    global moves_done
-    global elapse
-
-    board_key, existing_key = check_memo(board, memo)
-
-    if existing_key is not None:
-        return {"ref": memo[existing_key]["path"]}
-
-    key = f"Depth {current_depth}"
-    data_structure = create_data_structure(key, board, current_depth, amount_to_win, point_of_board)
-
-    if current_depth >= max_depth or data_structure[key]["Winning"]:
-        return data_structure
-
-    next_possible_moves = minMax.generate_moves(board)
-    option_count = 0
-
-    for move in next_possible_moves:
-        tic = time.perf_counter()
-        option_name = f"Option {option_count}"
-        next_board, next_board_worth, next_player_key = prepare_next_move(board, move, player_key, player_token, memo, amount_to_win)
-
-        next_move_data = generate_json_data(
-            next_board, current_depth + 1, max_depth, amount_to_win, player_token, next_player_key, next_board_worth, memo, path=f"{path}/{key}/Next Possible Move/{option_name}")
-        data_structure[key]["Next Possible Move"][option_name] = next_move_data
-        option_count += 1
-
-        moves_done += 1
-        progress = update_progress(moves_done, max_depth, board)
-
-        toc = time.perf_counter()
-        elapse.append(toc - tic)
-
-    data_structure["path"] = path
-    memo[board_key] = data_structure
-    return data_structure
-"""
+# TODO: NEED FULL REDONE
+# TODO : CAN'T SAVE DATA ANYMORE EXCEPT ONE AND INCORECT
 def generate_json_data(board: list[list[str]], current_depth: int, max_depth: int, amount_to_win: int, player_token: dict, player_key: int, point_of_board: int, memo: dict = {}, path: str = "") -> dict:
     global moves_done
     global elapse
@@ -161,7 +121,7 @@ def generate_json_data(board: list[list[str]], current_depth: int, max_depth: in
         return {"ref": existing_key}
 
     key = f"{board_key}"
-    data_structure = create_data_structure(key, board, current_depth, amount_to_win, point_of_board,player_token[player_key])
+    data_structure = create_data_structure(key, board, current_depth, amount_to_win, point_of_board, player_token[player_key]['token'])
 
     if current_depth >= max_depth or data_structure[key]["Winning"]:
         memo[key] = data_structure[key]
@@ -206,9 +166,10 @@ def update_progress(moves_done, max_depth, total_possibilities, board):
 
 
 
-def calculate_board_worth_for_player(players_tokens: dict[int:dict], evaluating_player: int, board: list[list[str]], distance_to_win: int,
+def calculate_board_worth_for_player(memo: dict, players_tokens: dict[int:dict], evaluating_player: int, board: list[list[str]], distance_to_win: int,
                                      empty_cell: str, value_empty: int, value_to_win: int, value_to_block_win: int,
-                                     value_towards_win: int, value_towards_blocking_win: int, memo: dict ) -> int:
+                                     value_towards_win: int, value_towards_blocking_win: int) -> int:
+
     board_key = get_key(board)
 
     if board_key in memo:
@@ -280,62 +241,39 @@ from multiprocessing.pool import ThreadPool
 
 
 def main():
-    tests_boards = [
-        [['X', ' ', 'X', ' ', 'X'],
-         ['O', ' ', ' ', 'O', ' '],
-         ['O', ' ', 'X', ' ', 'X'],
-         [' ', ' ', ' ', 'O', ' '],
-         [' ', ' ', ' ', ' ', 'O']],
-
-        [[' ', ' ', ' ', ' ', ' '],
-         [' ', ' ', ' ', ' ', ' '],
-         [' ', ' ', ' ', ' ', ' '],
-         [' ', ' ', ' ', ' ', ' '],
-         [' ', ' ', ' ', ' ', ' ']],
-
-        [['X', ' ', 'O', ' ', 'X'],
-         [' ', ' ', ' ', ' ', ' '],
-         ['O', ' ', 'X', ' ', 'O'],
-         [' ', ' ', ' ', ' ', ' '],
-         ['X', ' ', 'O', ' ', 'X']],
-
-        [['X', 'O', 'X', 'O', 'X'],
-         ['O', 'X', 'O', 'X', 'O'],
-         ['X', 'O', 'X', 'O', 'X'],
-         ['O', 'X', 'O', 'X', 'O'],
-         ['X', 'O', 'X', 'O', 'X']]
-    ]
-    size = 5
+    size = 3
     amount_to_win = 3
-    players_token = {1: {'token': 'X', 'amount played': 0}, 'token': 'X', 'amount played': 0}
+    players_token = {1: {'token': 'X', 'amount played': 0}, 2: {'token': 'O', 'amount played': 0}}
     player_key = 1
     board = ti.board_creation(size)
+    player_actions: list[int] = []
     max_depth = 10
+    total_possibilities = count_possibilities(board, 0, max_depth, amount_to_win, players_token, player_key)
 
+    print(f"Total number of possibilities: {total_possibilities}")
 
-    # Use a shared memo dictionary to store results of completed tasks
+    # Create a shared memo dictionary to store results of completed tasks
     manager = Manager()
     memo = manager.dict()
+
+    board_worth = calculate_board_worth_for_player(memo, players_token, player_key, board, amount_to_win, ' ', 1, 20,
+                                                   15, 7, 5)
 
     # Partially apply the function to make it suitable for parallel execution
     generate_json_data_with_memo = partial(generate_json_data, memo=memo)
 
-    board_worth = calculate_board_worth_for_player(players_token, player_key, board, amount_to_win, ' ', 1, 20, 15, 7,
-                                                   5, memo)
-    # Parallelize the execution using a thread pool
-    with ThreadPool(processes=4) as pool:
-        results = pool.imap_unordered(generate_json_data_with_memo,
-                                      (board, 0, max_depth, amount_to_win, players_token, player_key, board_worth))
+    # Parallelize the execution using a process pool
+    with Pool(processes=4) as pool:
+        _ = pool.apply(generate_json_data_with_memo,
+                       (board, 0, max_depth, amount_to_win, players_token, player_key, board_worth))
 
-        # Update progress as the results are being computed
-        total_possibilities = 0
-        for result in results:
-            total_possibilities += 1
-            progress = update_progress(moves_done, max_depth, total_possibilities, board)
+    # Now update the progress using the total_possibilities calculated earlier
+    progress = update_progress(moves_done, max_depth, total_possibilities, board)
 
     # Save the memo dictionary to the JSON file
     with open(f'{size}x{size}.json', 'w') as outfile:
         json.dump(dict(memo), outfile, indent=4)
+
 
 
 if __name__ == '__main__':
