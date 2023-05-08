@@ -34,6 +34,7 @@ def create_data_structure(key:str, board:list[list[str]], depth: int, amount_to_
         key: {
             "Board": board if ''.join([''.join(row) for row in board]).strip() else [],
             "Depth": depth,
+            "ID": key,
             "Winning": ti.three_case_winning(board, amount_to_win)[0],
             "Player": player_token,
             "point of the move": point_of_the_board,
@@ -179,90 +180,6 @@ def count_possibilities(board, current_depth, max_depth, amount_to_win, players_
 
 # ---------------------------- OPTIMISATION ZONE ------------------------------------------------
 
-# Previous version :
-'''
-def generate_json_data(board: list[list[str]], current_depth: int, max_depth: int, amount_to_win: int, player_token: dict, player_key: int, point_of_board: int, memo: dict = {}, path: str = "") -> dict:
-    global moves_done
-    global elapse
-
-    board_key, existing_key = check_memo(board, memo)
-
-    if existing_key is not None:
-        return {"ref": memo[existing_key]["path"]}
-
-    key = f"Depth {current_depth}"
-    data_structure = create_data_structure(key, board, current_depth, amount_to_win, point_of_board)
-
-    if current_depth >= max_depth or data_structure[key]["Winning"]:
-        return data_structure
-
-    next_possible_moves = minMax.generate_moves(board)
-    option_count = 0
-
-    for move in next_possible_moves:
-        tic = time.perf_counter()
-        option_name = f"Option {option_count}"
-        next_board, next_board_worth, next_player_key = prepare_next_move(board, move, player_key, player_token, memo, amount_to_win)
-
-        next_move_data = generate_json_data(
-            next_board, current_depth + 1, max_depth, amount_to_win, player_token, next_player_key, next_board_worth, memo, path=f"{path}/{key}/Next Possible Move/{option_name}")
-        data_structure[key]["Next Possible Move"][option_name] = next_move_data
-        option_count += 1
-
-        moves_done += 1
-        progress = update_progress(moves_done, max_depth, board)
-
-        toc = time.perf_counter()
-        elapse.append(toc - tic)
-
-    data_structure["path"] = path
-    memo[board_key] = data_structure
-    return data_structure
-'''
-'''
-
-# TODO: NEED FULL REDONE
-# TODO : CAN'T SAVE DATA ANYMORE EXCEPT ONE AND INCORRECT
-def generate_json_data(board: list[list[str]], current_depth: int, max_depth: int, amount_to_win: int, player_token: dict, player_key: int, point_of_board: int, memo: dict = {}, path: str = "") -> dict:
-    global moves_done
-    global elapse
-
-    board_key, existing_key = check_memo(board, memo)
-
-    if existing_key is not None:
-        return {"ref": existing_key}
-
-    key = f"{board_key}"
-    data_structure = create_data_structure(key, board, current_depth, amount_to_win, point_of_board, player_token[player_key]['token'])
-
-    if current_depth >= max_depth or data_structure[key]["Winning"]:
-        memo[key] = data_structure[key]
-        return {"ref": key}
-
-    next_possible_moves = minMax.generate_moves(board)
-    option_count = 0
-
-    for move in next_possible_moves:
-        tic = time.perf_counter()
-        option_name = f"Option {option_count}"
-        next_board, next_board_worth, next_player_key = prepare_next_move(board, move, player_key, player_token, memo, amount_to_win)
-
-        next_move_data = generate_json_data(
-            next_board, current_depth + 1, max_depth, amount_to_win, player_token, next_player_key, next_board_worth, memo, path=f"{path}/{key}/Next Possible Move/{option_name}")
-        data_structure[key]["Next Possible Move"][option_name] = next_move_data
-        option_count += 1
-
-        moves_done += 1
-
-        toc = time.perf_counter()
-        elapse.append(toc - tic)
-
-    data_structure["path"] = path
-    memo[key] = data_structure[key]
-    return {"ref": key}
-'''
-
-
 
 # --------------------------------------------------------------------------------------------
 
@@ -284,6 +201,7 @@ def calculate_board_worth(board: list[list[str]], amount_to_win: int, player_tok
 def board_to_tuple(board):
     return tuple(tuple(row) for row in board)
 
+
 def generate_json_data(board: list[list[str]], depth: int, amount_to_win: int, player_token: dict, player_key: int,
                        id: int) -> None:
     global moves_done
@@ -304,9 +222,10 @@ def generate_json_data(board: list[list[str]], depth: int, amount_to_win: int, p
         existing_data = {}
 
     while depth > 0:
+        existing_data[f'Depth {actual_depth}'] = {}
         for _ in range(len(board_data)):
             depth_board = board_data.popleft()
-            all_possible_move = minMax.generate_moves(board)
+            all_possible_move = minMax.generate_moves(depth_board)
 
             # Calculation for one depth
             for row, cell in all_possible_move:
@@ -326,7 +245,7 @@ def generate_json_data(board: list[list[str]], depth: int, amount_to_win: int, p
 
                 # Combine the existing data with the new data
                 key = list(json_data.keys())[0]  # Get the key of the current data dictionary
-                existing_data[key] = json_data[key]  # Add the current data to the existing data using the key
+                existing_data[f'Depth {actual_depth}'][key] = json_data[key]  # Add the current data to the existing data using the key
 
                 if not json_data[str(id)]["Winning"]:
                     board_data.append(board_copy)
@@ -337,6 +256,7 @@ def generate_json_data(board: list[list[str]], depth: int, amount_to_win: int, p
                 id += 1
 
         actual_depth += 1
+        id = 0
         player_key += 1
         if player_key > len(player_token):
             player_key = 1
@@ -345,7 +265,7 @@ def generate_json_data(board: list[list[str]], depth: int, amount_to_win: int, p
     # Save the updated data back to the file
     with open(filename, 'w') as outfile:
         json.dump(existing_data, outfile, indent=4)
-    print(f'Saving we are at : {id}')
+    print(f'Saving we are at depth : {actual_depth}')
 
 
 
@@ -360,7 +280,7 @@ from multiprocessing.pool import ThreadPool
 
 
 def main():
-    size = 5
+    size = 3
     amount_to_win = 3
     players_token = {1: {'token': 'X', 'amount played': 0}, 2: {'token': 'O', 'amount played': 0}}
     player_key = 1
