@@ -11,6 +11,7 @@ from collections import deque
 moves_done = 0
 elapse = []
 
+
 def are_boards_mirrored(board1, board2):
     size = len(board1)
     return all(board1[i][j] == board2[j][i] for i in range(size) for j in range(size))
@@ -78,35 +79,6 @@ def get_mirrored_versions(board):
     return mirrored_versions
 
 
-def check_memo(board, memo):
-    board_key = get_key(board)
-    mirrored_versions = get_mirrored_versions(board)
-    mirrored_keys = [get_key(mirrored_board) for mirrored_board in mirrored_versions]
-
-    existing_key = None
-    for key in [board_key] + mirrored_keys:
-        if key in memo:
-            existing_key = key
-            break
-
-    return board_key, existing_key
-
-
-def prepare_next_move(board, move, player_key, player_token, memo, amount_to_win):
-    next_board = minMax.give_board_new_tile(board, move[0], move[1], player_token[player_key])
-    next_player_key = 2 if player_key == 1 else 1
-
-    # Memoization logic
-    next_board_key = get_key(next_board)
-    if next_board_key in memo:
-        next_board_worth = memo[next_board_key]["point of the move"]  # Changed this line
-    else:
-        next_board_worth = calculate_board_worth_for_player(player_token, player_key, next_board, amount_to_win, ' ', 1, 20, 15, 7, 5)
-
-    return next_board, next_board_worth, next_player_key
-
-
-
 def update_progress(moves_done, max_depth, total_possibilities):
 
     r = "\\", "|", "/", "-"
@@ -120,33 +92,6 @@ def update_progress(moves_done, max_depth, total_possibilities):
     clear_screen()
     print(f'{r[moves_done % 4]} calculating expected time , expected_move_still_needed ')
     return moves_done / max_depth
-
-
-
-def calculate_board_worth_for_player(memo: dict, players_tokens: dict[int:dict], evaluating_player: int, board: list[list[str]], distance_to_win: int,
-                                     empty_cell: str, value_empty: int, value_to_win: int, value_to_block_win: int,
-                                     value_towards_win: int, value_towards_blocking_win: int) -> int:
-
-    board_key = get_key(board)
-
-    if board_key in memo:
-        return memo[board_key]
-
-    points: int = 0
-    total_worth_array = ti.board_creation(len(board))
-    for e, row in enumerate(board):
-        for k, col in enumerate(row):
-            surrouding_cells = minMax.get_directional_neighbors(board, e, k, distance_to_win)
-            cell_worth = minMax.surrounding_evaluation(surrouding_cells, players_tokens, evaluating_player, empty_cell,
-                           value_empty, value_to_win, value_to_block_win, value_towards_win,value_towards_blocking_win,
-                                                       distance_to_win, board, [e, k])
-            total_worth_array[e][k] = cell_worth
-    for e in total_worth_array:
-        for k in e:
-            points = k + points
-
-    memo[board_key] = points
-    return points
 
 
 def count_possibilities_helper(args):
@@ -201,7 +146,6 @@ def calculate_board_worth(board: list[list[str]], amount_to_win: int, player_tok
 def board_to_tuple(board):
     return tuple(tuple(row) for row in board)
 
-#TODO:MAKE IT EXADECIMAL WITH PART OF THE NUMBER BEING THE DEPTH
 
 def generate_json_data(board: list[list[str]], depth: int, amount_to_win: int, player_token: dict, player_key: int,
                        id: int) -> None:
@@ -241,13 +185,13 @@ def generate_json_data(board: list[list[str]], depth: int, amount_to_win: int, p
 
                 board_worth = calculate_board_worth(board_copy, amount_to_win, player_token, player_key)  # Give how much the board worth
 
-                json_data = create_data_structure(f'{id:0X}', board_copy, actual_depth, amount_to_win, board_worth, player_token[player_key]["token"], mother_id) # Format the data
+                json_data = create_data_structure(f'{id:0X}{actual_depth:0X}', board_copy, actual_depth, amount_to_win, board_worth, player_token[player_key]["token"], mother_id) # Format the data
 
                 # Combine the existing data with the new data
                 key = list(json_data.keys())[0]  # Get the key of the current data dictionary
                 existing_data[key] = json_data[key]  # Add the current data to the existing data using the key
 
-                if not json_data[f'{id:0X}']["Winning"]:
+                if not json_data[f'{id:0X}{actual_depth:0X}']["Winning"]:
                     board_data.append((board_copy, key))  # Add the current key as the Mother ID
 
                 # Mark the board as processed
@@ -267,15 +211,7 @@ def generate_json_data(board: list[list[str]], depth: int, amount_to_win: int, p
         json.dump(existing_data, outfile, indent=4)
     print(f'Saving we are at depth : {actual_depth}')
 
-
-
-
-
-
 #--------------------------------------------------------------------------------------------
-
-
-from multiprocessing.pool import ThreadPool
 
 
 def main():
@@ -284,19 +220,12 @@ def main():
     players_token = {1: {'token': 'X', 'amount played': 0}, 2: {'token': 'O', 'amount played': 0}}
     player_key = 1
     board = ti.board_creation(size)
-    max_depth = 13
+    max_depth = 5
     first_id = 0
     generate_json_data(board, max_depth, amount_to_win, players_token, player_key, first_id)
-
-
-
 
 
 if __name__ == '__main__':
     main()
 
-
-
-
-# surounding evaluation :
 
