@@ -1,5 +1,4 @@
 import statistics
-
 import Tictacto as ti
 import minMax_AI_Tictac as minMax
 from modules.utils import *
@@ -7,6 +6,7 @@ import copy
 import json
 from json.decoder import JSONDecodeError
 from collections import deque
+import multiprocessing
 
 moves_done = 0
 elapse = []
@@ -131,13 +131,20 @@ def count_possibilities(board, current_depth, max_depth, amount_to_win, players_
 
 # -------------------------------- OPTIMISE TO REPLACE ZONE ----------------------------------
 
+board_worth_cache = {}
+
 def calculate_board_worth(board: list[list[str]], amount_to_win: int, player_token: dict, player_key: int) -> int:
+    board_tuple = board_to_tuple(board)
+    if board_tuple in board_worth_cache:
+        return board_worth_cache[board_tuple]
+
     total_board_worth: int = 0
     for e, row in enumerate(board):
         for k, cell in enumerate(row):
             total_board_worth += minMax.surrounding_evaluation(
                 minMax.get_directional_neighbors(board, e, k, amount_to_win), player_token, player_key, ' ',
                 1, 20, 15, 7, 4, amount_to_win, board, [e, k])  # Calculate the worth of a specific board
+    board_worth_cache[board_tuple] = total_board_worth
     return total_board_worth
 
 
@@ -216,13 +223,22 @@ def generate_json_data(board: list[list[str]], depth: int, amount_to_win: int, p
 
 def main():
     size = 3
-    amount_to_win = 3
+    amount_to_win = 5
     players_token = {1: {'token': 'X', 'amount played': 0}, 2: {'token': 'O', 'amount played': 0}}
     player_key = 1
     board = ti.board_creation(size)
-    max_depth = 5
+    max_depth = 3
     first_id = 0
-    generate_json_data(board, max_depth, amount_to_win, players_token, player_key, first_id)
+    # Use multiprocessing to parallelize the code
+    num_processes = multiprocessing.cpu_count()
+    pool = multiprocessing.Pool(processes=num_processes)
+
+    # Call the generate_json_data function for each process in parallel
+    results = [pool.apply_async(generate_json_data,
+                                args=(board, max_depth, amount_to_win, players_token, player_key, first_id)) for _ in
+               range(num_processes)]
+    pool.close()
+    pool.join()
 
 
 if __name__ == '__main__':
