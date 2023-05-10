@@ -1,3 +1,4 @@
+import math
 import statistics
 import Tictacto as ti
 import minMax_AI_Tictac as minMax
@@ -7,6 +8,9 @@ import json
 from json.decoder import JSONDecodeError
 from collections import deque
 import multiprocessing
+import sys
+import time
+
 
 moves_done = 0
 elapse = []
@@ -79,48 +83,35 @@ def get_mirrored_versions(board):
     return mirrored_versions
 
 
-def update_progress(moves_done, max_depth, total_possibilities):
+
+def update_progress(moves_done, max_depth, total_possibilities, start_time):
 
     r = "\\", "|", "/", "-"
     expected_move_still_needed = total_possibilities - moves_done
 
-    if not elapse:  # Check if elapse is empty
+    if moves_done == 0:  # Check if moves_done is 0
         t = 0
     else:
-        t = (statistics.median(elapse) * expected_move_still_needed)
+        elapsed_time = time.time() - start_time
+        t = elapsed_time * expected_move_still_needed / moves_done
 
-    clear_screen()
-    print(f'{r[moves_done % 4]} calculating expected time , expected_move_still_needed ')
-    return moves_done / max_depth
+    progress = moves_done / max_depth
+    bar_length = 50
+    filled_length = int(round(bar_length * progress))
+
+    bar = "=" * filled_length + "-" * (bar_length - filled_length)
+    sys.stdout.write(f"\r{r[moves_done % 4]} [{bar}] {progress * 100:.2f}% (Estimated time remaining: {t:.2f}s)")
+    sys.stdout.flush()
+
+    return progress
 
 
-def count_possibilities_helper(args):
-    return count_possibilities(*args)
 
+def game_possibilities(board_size: int, max_depth: int, num_players: int) -> int:
+    total_cells = board_size * board_size
+    possibilities = math.factorial(total_cells) / (math.factorial(total_cells - max_depth) * (num_players ** max_depth))
+    return int(possibilities)
 
-def count_possibilities(board, current_depth, max_depth, amount_to_win, players_token, player_key):
-    if players_token[player_key]['amount played'] >= amount_to_win:
-        if current_depth >= max_depth or ti.three_case_winning(board, amount_to_win)[0]:
-            return 1
-
-    max_possible_depth = len(board) * len(board[0]) - current_depth
-    if max_depth > max_possible_depth:
-        max_depth = max_possible_depth
-
-    next_possible_moves = minMax.generate_moves(board)
-
-    next_boards_and_keys = []
-    for move in next_possible_moves:
-        next_board = minMax.give_board_new_tile(board, move[0], move[1], players_token[player_key]['token'])
-        next_player_key = 2 if player_key == 1 else 1
-        next_boards_and_keys.append((next_board, current_depth + 1, max_depth, amount_to_win, players_token, next_player_key))
-
-    results = []
-    for args in next_boards_and_keys:
-        result = count_possibilities_helper(args)
-        results.append(result)
-
-    return sum(results)
 
 
 # ---------------------------- OPTIMISATION ZONE ------------------------------------------------
@@ -222,23 +213,40 @@ def generate_json_data(board: list[list[str]], depth: int, amount_to_win: int, p
 
 
 def main():
-    size = 3
+    size = 5
     amount_to_win = 5
     players_token = {1: {'token': 'X', 'amount played': 0}, 2: {'token': 'O', 'amount played': 0}}
     player_key = 1
     board = ti.board_creation(size)
-    max_depth = 3
+    max_depth = 5
     first_id = 0
+
+    # Calculate gross possibilities of the board
+    total_possibilities = game_possibilities(size, max_depth, len(players_token))
+    print(total_possibilities)
+
     # Use multiprocessing to parallelize the code
     num_processes = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=num_processes)
 
     # Call the generate_json_data function for each process in parallel
+    start_time = time.time()
     results = [pool.apply_async(generate_json_data,
                                 args=(board, max_depth, amount_to_win, players_token, player_key, first_id)) for _ in
                range(num_processes)]
+
+    # Update progress bar
+    while not all(result.ready() for result in results):
+        moves_done = sum(result._number_left for result in results)
+        update_progress(moves_done, max_depth, total_possibilities, start_time)
+        time.sleep(0.5)
+
     pool.close()
     pool.join()
+
+    update_progress(max_depth, max_depth, total_possibilities, start_time)
+    print("\nCompleted.")
+
 
 
 if __name__ == '__main__':
