@@ -236,10 +236,10 @@ def main():
                range(num_processes)]
 
     # Update progress bar
-    while not all(result.ready() for result in results):
-        moves_done = sum(result._number_left for result in results)
-        update_progress(moves_done, max_depth, total_possibilities, start_time)
-        time.sleep(0.5)
+    #while not all(result.ready() for result in results):
+    #    moves_done = sum(result._number_left for result in results)
+    #    update_progress(moves_done, max_depth, total_possibilities, start_time)
+    #    time.sleep(0.5)
 
     pool.close()
     pool.join()
