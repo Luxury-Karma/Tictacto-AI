@@ -39,6 +39,8 @@ void printBoard(int** board, int boardSize) {
 }
 
 // Give the user the choice of the movement
+//TODO: ENSURE THE CELL IS EMPTY
+//TOOD: ENSURE THE INPUT IS AN INTEGER
 int* playerMovement() {
     int answer[2];
     std::cout << "Enter the row ";
