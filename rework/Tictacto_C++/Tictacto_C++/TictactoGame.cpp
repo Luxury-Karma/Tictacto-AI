@@ -221,9 +221,9 @@ int** playerTurn(int** board, int boardSize, int playerPlaying) {
 
 
     // apply the movement
-    board = applyMove(player[playerPlaying], board, movement[0], movement[1]);
+    board = applyMove(playerPlaying, board, movement[0], movement[1]);
 
-    return board
+    return board;
 }
 
 int main()
@@ -251,7 +251,7 @@ int main()
     {
 
         // Player Turn
-        board = playerTurn(board, boardSize, playerIndex);
+        board = playerTurn(board, boardSize,player[playerIndex]);
 
         //look for winning conditions
         int* winner = Winning_Conditions(board, boardSize, amountToWin);
