@@ -4,6 +4,22 @@
 #include <iostream>
 const int emptyCell = 0;
 
+
+// Look if the emplacement asked to place a new cell is valide or not
+// It look if There is someone on the emplacement OR if it is in the bounderys
+bool dataIsUsable(int** board, int boardSize, int rowWanted, int colWanted) {
+    bool canUse = true;
+    if (rowWanted >= boardSize or colWanted >= boardSize) 
+    {
+        canUse = false
+    }
+    else if (board[rowWanted][colWanted] =! emptyCell) {
+        canUse = false
+    }
+    return canUse;
+}
+
+
 // Create a 2D Array that will be the playing board. The empty tiles are 0
 int** create2DArray(int arraySize)
 {
@@ -212,9 +228,11 @@ int main()
     printBoard(board, boardSize);
     while (playing)
     {
- 
-        // player turn
-        int* movement = playerMovement();
+        do {
+            // player turn
+            int* movement = playerMovement();
+        }while(dataIsUsable(board, boardSize, movement[0], movement[1]))
+        
 
         // apply the movement
         board = applyMove(player[playerIndex], board, movement[0], movement[1]);
@@ -246,3 +264,6 @@ int main()
 
     
 }
+
+
+
