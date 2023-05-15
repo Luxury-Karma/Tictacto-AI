@@ -208,6 +208,24 @@ int* Winning_Conditions(int** board, int boardSize, int amountToWin) {
 }
 
 
+//Player turn 
+int** playerTurn(int** board, int boardSize, int playerPlaying) {
+
+    printBoard(board, boardSize);
+
+    int* movement;
+    do {
+        // player turn
+        movement = playerMovement();
+    } while (!dataIsUsable(board, boardSize, movement[0], movement[1]));
+
+
+    // apply the movement
+    board = applyMove(player[playerPlaying], board, movement[0], movement[1]);
+
+    return board
+}
+
 int main()
 {
     // initial playing board
@@ -226,20 +244,14 @@ int main()
 
     //initial board
     printBoard(board, boardSize);
-    int* movement;
+    
+
+
     while (playing)
     {
-        do {
-            // player turn
-            movement = playerMovement();
-        } while (!dataIsUsable(board, boardSize, movement[0], movement[1]));
 
-
-            // apply the movement
-            board = applyMove(player[playerIndex], board, movement[0], movement[1]);
-        // remove for memory 
-
-        printBoard(board, boardSize);
+        // Player Turn
+        board = playerTurn(board, boardSize, playerIndex);
 
         //look for winning conditions
         int* winner = Winning_Conditions(board, boardSize, amountToWin);
